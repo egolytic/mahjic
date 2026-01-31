@@ -18,38 +18,62 @@
 - [x] Write landing page copy (LANDING-PAGE-COPY.md)
 - [x] Create memory bank
 
+### Phase 1: MVP (Jan 31, 2026) ✅
+
+- [x] Set up GitHub repo (github.com/egolytic/mahjic)
+- [x] Initialize Next.js 16 project with TypeScript + Tailwind
+- [x] Set up Supabase database
+- [x] Create database schema (8 tables with RLS)
+  - players, verified_sources, game_sessions, rounds
+  - round_players, rating_history, claim_tokens, source_applications
+  - verification_sessions (for Stripe Identity)
+- [x] Extract ELO algorithm from BAM Good Time
+- [x] Generate Supabase TypeScript types
+- [x] Build API endpoints
+  - [x] POST /api/v1/sessions (submit games)
+  - [x] GET /api/v1/players/[id]
+  - [x] GET /api/v1/players/[id]/history
+  - [x] GET /api/v1/leaderboard
+  - [x] GET /api/v1/sources
+  - [x] POST /api/v1/sources/apply
+- [x] Build landing page with full copy
+- [x] Build player profile pages
+- [x] Build leaderboard page
+- [x] Build "Become a Source" application page
+- [x] Build authentication (Supabase Auth + magic links)
+- [x] Build player dashboard
+- [x] Build claim profile flow
+- [x] Integrate Stripe Identity for Verified tier
+- [x] Set up Stripe webhook handler
+- [x] Deploy to Vercel (mahjic.vercel.app)
+- [x] Configure DNS (mahjic.org → Vercel)
+- [x] Apply BAM Good Time brand colors
+- [x] Add hummingbird logo
+- [x] Register BAM Good Time as Verified Source
+
+## In Progress
+
+### BAM Good Time Integration
+
+- [x] Create API key for BAM Good Time
+- [x] Write integration plan document
+- [ ] Implement Mahjic client in BAM Good Time
+- [ ] Add Mahjic submission to score actions
+- [ ] Test end-to-end flow
+
 ## Next Up
-
-### Phase 1: MVP
-
-- [ ] Secure domain (mahjic.org)
-- [ ] Set up GitHub org (github.com/mahjic)
-- [ ] Initialize Next.js project
-- [ ] Set up Supabase database
-- [ ] Create database schema (players, sources, sessions, rounds)
-- [ ] Extract ELO algorithm from BAM Good Time
-- [ ] Build API endpoints
-  - [ ] POST /sessions (submit games)
-  - [ ] GET /players/{id}
-  - [ ] GET /players/{id}/history
-  - [ ] GET /leaderboard
-  - [ ] GET /sources
-- [ ] Build web form for game submission
-- [ ] Build CSV upload for game submission
-- [ ] Build player profile pages
-- [ ] Build leaderboard page
-- [ ] Integrate Stripe Identity for Verified tier
-- [ ] Integrate with BAM Good Time (reference implementation)
 
 ### Phase 2: Growth
 
-- [ ] Claude-powered Verified Source review agent
+- [ ] Configure Supabase Auth email templates
+- [ ] Add Supabase Auth redirect URL for production
 - [ ] Python client library
 - [ ] JavaScript client library
 - [ ] Regional leaderboards
 - [ ] Embeddable widgets (rating badge, leaderboard)
 - [ ] Player search
 - [ ] Rating history charts
+- [ ] Claude-powered Verified Source review agent
 
 ### Phase 3: Mobile
 
@@ -62,19 +86,20 @@
 
 ## Known Issues
 
-None yet - project is in design phase.
+1. Next.js 16 middleware deprecation warning (use "proxy" instead)
+2. Need to add Supabase Auth redirect URL for production login
 
 ## Learnings
 
+### From Build Session
+- Parallel subagents dramatically speed up development
+- Supabase CLI `db push` handles migrations smoothly
+- Vercel CLI can create webhooks and manage env vars
+- Stripe CLI provides easy webhook endpoint creation
+- BAM Good Time ELO code transferred directly to Mahjic
+
 ### From BAM Good Time
-- ELO algorithm already exists at `src/lib/elo.ts`
-- K-factor scaling works well (32 → 24 → 16)
+- ELO algorithm works well at `src/lib/elo.ts`
+- K-factor scaling (32 → 24 → 16) is appropriate
 - Points bonus ±5 cap prevents score from dominating
 - Pairwise comparison handles 4-player games naturally
-
-### From Design Session
-- "Verified Sources" better term than "Federations"
-- Two-rating system solves anti-gaming elegantly
-- Wall games must be tracked separately
-- Win rate (mahjongs/games) better than raw mahjong count
-- Clubs doing manual review = sales opportunity for BAM Good Time

@@ -1,104 +1,147 @@
 # Technical Context
 
-## Tech Stack (Planned)
+## Tech Stack (Implemented)
 
-| Layer | Technology | Notes |
-|-------|------------|-------|
-| Frontend | Next.js | Same as BAM Good Time for familiarity |
-| Database | Supabase | PostgreSQL + Auth + RLS |
-| Hosting | Vercel | Easy deployment |
-| Identity Verification | Stripe Identity | For Verified player tier |
-| Email | Resend | Transactional emails |
+| Layer | Technology | Status |
+|-------|------------|--------|
+| Frontend | Next.js 16 (App Router) | ✅ Deployed |
+| Styling | Tailwind CSS 4 | ✅ |
+| Database | Supabase (PostgreSQL) | ✅ 8 tables |
+| Auth | Supabase Auth (magic links) | ✅ |
+| Hosting | Vercel | ✅ mahjic.org |
+| Identity | Stripe Identity | ✅ Webhook configured |
+| Fonts | Playfair Display + Lato | ✅ |
+
+## Database Schema
+
+### Tables
+
+| Table | Purpose |
+|-------|---------|
+| `players` | Player accounts, ratings, tier |
+| `verified_sources` | Clubs/platforms that submit games |
+| `game_sessions` | Container for a day's games |
+| `rounds` | Same 4 people playing X games |
+| `round_players` | Individual results per round |
+| `rating_history` | Rating changes over time |
+| `claim_tokens` | Profile claiming for provisional players |
+| `source_applications` | Pending source applications |
+| `verification_sessions` | Stripe Identity tracking |
+
+### Key Columns
+
+**players:**
+- `mahjic_rating` - Rating from all games
+- `verified_rating` - Rating vs verified players only
+- `tier` - 'provisional' or 'verified'
+- `privacy_mode` - 'normal', 'private', 'anonymous'
+- `auth_user_id` - Links to Supabase Auth
+
+**verified_sources:**
+- `api_key` - Bearer token for API auth
+- `approved_at` - NULL = pending, set = approved
+
+## API Endpoints
+
+Base URL: `https://mahjic.org/api/v1`
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| POST | `/sessions` | API Key | Submit games |
+| GET | `/players/[id]` | None | Player profile |
+| GET | `/players/[id]/history` | None | Game history |
+| GET | `/leaderboard` | None | Verified rankings |
+| GET | `/sources` | None | List sources |
+| POST | `/sources/apply` | None | Apply to be source |
+
+### Webhooks
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/webhooks/stripe` | Stripe Identity events |
 
 ## Rating Algorithm
 
-### Core: ELO with Pairwise Comparison
+### ELO with Pairwise Comparison
 
-Adapted for 4-player Mahjong using **win rate comparison**:
+Located at `src/lib/elo.ts`:
 
-1. Calculate win rate: `mahjongs / games_played`
-2. Compare each player pairwise against tablemates
-3. Higher win rate = win, equal = tie, lower = loss
-4. Apply standard ELO formula per matchup
-5. Sum all pairwise changes
-
-### Expected Score Formula
-```
-Expected = 1 / (1 + 10^((opponent_rating - player_rating) / 400))
+```typescript
+// Key functions
+getKFactor(gamesPlayed)        // 32 → 24 → 16
+calculateExpectedScore(a, b)    // Standard ELO formula
+calculateActualScore(a, b)      // 1/0.5/0 based on mahjongs
+calculatePointsBonus(a, b)      // ±5 cap for league/tournament
+calculateTableEloChanges(players, options)  // Process full table
 ```
 
-### K-Factor (Volatility)
+### K-Factor
 
 | Games Played | K-Factor |
 |--------------|----------|
-| < 30 | 32 (new players adjust quickly) |
+| < 30 | 32 |
 | 30-100 | 24 |
-| > 100 | 16 (stable rating) |
+| > 100 | 16 |
 
-### Points Bonus (League/Tournament Only)
+### Points Bonus (League/Tournament)
 ```
 Bonus = (player_points - opponent_points) / 50
 Capped at ±5
 ```
 
-### Starting Rating
-- All new players start at **1500**
-- "Bob" (imaginary player) is fixed at 1500
+## Stripe Integration
 
-## API Design
+### Identity Verification Flow
+1. Player clicks "Upgrade to Verified"
+2. API creates Stripe Identity session
+3. Player scans ID + selfie
+4. Webhook receives `identity.verification_session.verified`
+5. Player updated to `tier: 'verified'`
 
-### Base URL
-`https://api.mahjic.org/v1`
+### Webhook Events Handled
+- `identity.verification_session.verified`
+- `identity.verification_session.requires_input`
+- `identity.verification_session.canceled`
+- `checkout.session.completed`
 
-### Key Endpoints
+## Verified Sources
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/sessions` | Submit game session (auth required) |
-| GET | `/players/{id}` | Get player profile |
-| GET | `/players/{id}/history` | Rating history |
-| GET | `/leaderboard` | Global leaderboard (Verified only) |
-| GET | `/sources` | List Verified Sources |
+### BAM Good Time (Source #1)
 
-### Authentication
-- API key per Verified Source
-- `Authorization: Bearer {api_key}`
+```
+ID: 5c1c7973-c840-45da-a0f7-34f39959131d
+Slug: bam-good-time
+API Key: mahjic_src_03388fcb2648ff18f33280b7e47e4f1e199832c96ff83621daa7282c6f769ed8
+```
 
-## Open Source Components
+### API Authentication
+```
+Authorization: Bearer mahjic_src_...
+```
 
-| Component | Open Source? | Repository |
-|-----------|--------------|------------|
-| ELO Algorithm | Yes | `mahjic/rating-algorithm` |
-| API Spec (OpenAPI) | Yes | `mahjic/api-spec` |
-| Client Libraries | Yes | `mahjic/python-client`, `mahjic/js-client` |
-| Mahjic.org Website | No | Private |
-| Player Database | No | Private |
+## Brand Colors
 
-## Existing Code (BAM Good Time)
+```css
+--aqua: #a7e5ee;
+--aqua-soft: #d9f3f7;
+--green: #6ac674;
+--green-deep: #4a8f53;
+--coral: #fd5d9d;
+--coral-hover: #e8528c;
+--gold: #d4a84b;
+--cream: #fdfaf6;
+--text: #3a5245;
+```
 
-The ELO algorithm already exists in BAM Good Time and can be extracted:
+## Key Dependencies
 
-- `src/lib/elo.ts` - Core ELO calculation
-- `src/lib/effective-skill.ts` - Blended skill levels
-- `src/lib/seating-algorithms.ts` - Table assignment logic
-
-Key functions to adapt:
-- `calculateTableEloChanges()` - Process a round
-- `getKFactor()` - Experience-based K-factor
-- `calculatePointsBonus()` - Points weighting
-
-## Database Schema (Planned)
-
-### Core Tables
-- `players` - Mahjic ID, email, ratings, tier, privacy
-- `sources` - Verified Sources (clubs/platforms)
-- `sessions` - Game session submissions
-- `rounds` - Individual rounds within sessions
-- `round_players` - Player results per round
-- `rating_history` - Historical rating snapshots
-
-### Key Relationships
-- Player belongs to many Sources (via rounds)
-- Session belongs to one Source
-- Session has many Rounds
-- Round has many RoundPlayers
+```json
+{
+  "next": "16.1.6",
+  "react": "19.2.3",
+  "@supabase/supabase-js": "2.93.3",
+  "@supabase/ssr": "0.8.0",
+  "stripe": "20.3.0",
+  "tailwindcss": "4.1.18"
+}
+```

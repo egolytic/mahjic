@@ -8,6 +8,7 @@
 
 ```bash
 cd ~/Desktop/Mahjic
+pnpm dev  # Start dev server at localhost:3000
 ```
 
 ---
@@ -26,16 +27,18 @@ cd ~/Desktop/Mahjic
 ## QUICK REFERENCE
 
 ### Project Status
-- **Phase:** Design Complete, Ready to Build
-- **Code:** None yet - spec only
+- **Phase:** MVP Complete, BAM Integration In Progress
+- **Live:** https://mahjic.org
+- **GitHub:** https://github.com/egolytic/mahjic
 
 ### Key Files
 ```
-SPEC.md              # Full technical specification
-API-REFERENCE.md     # API documentation
-LANDING-PAGE-COPY.md # Website copy
-README.md            # Project overview
-memory-bank/         # Persistent context (READ THIS)
+src/app/api/v1/     # REST API endpoints
+src/lib/elo.ts      # Rating algorithm
+src/lib/stripe.ts   # Stripe Identity
+src/lib/supabase/   # Database clients
+supabase/migrations/# Database schema
+docs/plans/         # Integration plans
 ```
 
 ### Core Concepts
@@ -44,18 +47,19 @@ memory-bank/         # Persistent context (READ THIS)
 - **Verified Players:** $20/year + Stripe Identity, appear on leaderboards
 - **Two Ratings:** Mahjic Rating (all games) + Verified Rating (vs verified only)
 
-### Game Data Model
+### API Endpoints
 ```
-Round = Same 4 people playing X games
-├── games_played: Number of games in round
-├── mahjongs: Games won per player
-├── wall_games: Games with no winner
-└── points: Optional, for league/tournament
+POST /api/v1/sessions     # Submit games (requires API key)
+GET  /api/v1/players/[id] # Player profile
+GET  /api/v1/leaderboard  # Verified rankings
+GET  /api/v1/sources      # List sources
 ```
 
-### Validation Rule
+### BAM Good Time Integration
 ```
-sum(all mahjongs) + wall_games = games_played
+API Key: mahjic_src_03388fcb2648ff18f33280b7e47e4f1e199832c96ff83621daa7282c6f769ed8
+Source ID: 5c1c7973-c840-45da-a0f7-34f39959131d
+Plan: docs/plans/2026-01-31-bam-mahjic-integration.md
 ```
 
 ### ELO Algorithm
@@ -64,24 +68,73 @@ sum(all mahjongs) + wall_games = games_played
 - K-factor: 32 (new) → 24 (mid) → 16 (experienced)
 - Points bonus: ±5 cap for league/tournament
 
-### Related Project
-- **BAM Good Time:** Reference implementation, Verified Source #1
-- ELO code exists at: `~/Desktop/Bam Good Time/bam-good-time/src/lib/elo.ts`
+### Validation Rule
+```
+sum(all mahjongs) + wall_games = games_played
+```
 
 ---
 
-## PLANNED TECH STACK
+## TECH STACK
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js |
-| Database | Supabase |
-| Hosting | Vercel |
-| Identity | Stripe Identity |
-| Email | Resend |
+| Layer | Technology | Status |
+|-------|------------|--------|
+| Frontend | Next.js 16 | ✅ |
+| Database | Supabase | ✅ 9 tables |
+| Hosting | Vercel | ✅ mahjic.org |
+| Identity | Stripe Identity | ✅ |
+| Auth | Supabase Auth | ✅ magic links |
 
 ---
 
-## AFTER COMMITS
+## DATABASE TABLES
 
-Run `/workflow:update-memory` to save learnings for future sessions.
+| Table | Purpose |
+|-------|---------|
+| `players` | Accounts, ratings, tier |
+| `verified_sources` | Clubs that submit games |
+| `game_sessions` | Container for games |
+| `rounds` | Same 4 people playing |
+| `round_players` | Individual results |
+| `rating_history` | Rating over time |
+| `claim_tokens` | Profile claiming |
+| `source_applications` | Pending applications |
+| `verification_sessions` | Stripe Identity |
+
+---
+
+## ENVIRONMENT VARIABLES
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://nevmbqdvivaqwvuzfrrn.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# App
+NEXT_PUBLIC_APP_URL=https://mahjic.org
+```
+
+---
+
+## RELATED PROJECT
+
+**BAM Good Time:** `/Users/sterlinglcannon/Desktop/Bam Good Time/bam-good-time`
+- Reference implementation, Verified Source #1
+- Shares ELO algorithm and brand colors
+- Integration plan in `docs/plans/`
+
+---
+
+## COMMANDS
+
+```bash
+pnpm dev              # Dev server
+pnpm build            # Production build
+supabase db push      # Push migrations
+vercel --prod         # Deploy to production
+```

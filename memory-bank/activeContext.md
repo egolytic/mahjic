@@ -2,62 +2,83 @@
 
 ## Current State
 
-**Phase:** Design Complete, Ready to Build
+**Phase:** MVP Complete, Integration In Progress
 
-The full design spec has been created and documented. No code has been written yet.
+The Mahjic rating system is fully built and deployed. Now integrating with BAM Good Time.
 
 ## What Was Just Done (Jan 31, 2026)
 
-Completed comprehensive brainstorming session to design the Mahjic rating system:
+### Built Complete MVP
+1. **Next.js 16 app** with TypeScript, Tailwind, App Router
+2. **Supabase database** with 8 tables + RLS policies
+3. **Full API** - sessions, players, leaderboard, sources
+4. **Authentication** - Supabase Auth with magic links
+5. **Stripe Identity** - verification flow for $20/year tier
+6. **Deployed** to Vercel with custom domain
 
-1. **Researched chess rating systems** (FIDE, Lichess, open source ELO)
-2. **Chose architecture model** - Hybrid with Verified Sources as gatekeepers
-3. **Designed player tiers** - Provisional (free) vs Verified ($20/year + Stripe ID)
-4. **Designed two-rating system** - Overall + Verified-only for leaderboards
-5. **Refined game data model** - Rounds with mahjongs, games_played, wall_games, points
-6. **Designed API** - Sessions endpoint, player profiles, leaderboards
-7. **Planned integration methods** - API, web form, CSV upload
-8. **Defined open source strategy** - Algorithm open, platform private
-9. **Created legitimacy framework** - How to defend against closed systems
+### Configured Integration
+1. **BAM Good Time registered** as Verified Source #1
+2. **API key generated** for BAM to submit games
+3. **Integration plan** documented with code examples
 
-## Key Decisions Made
+## Live URLs
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Algorithm | ELO (not Glicko-2) | Simpler, already built in BAM Good Time |
-| Comparison metric | Win rate (mahjongs/games) | Handles variable game counts |
-| Player registration | Via Verified Sources | Clubs are gatekeepers, not self-signup |
-| Leaderboard anti-gaming | Two ratings | Verified Rating only counts vs verified players |
-| Verified Source cost | Free | Maximize adoption, it's a sales funnel |
-| Verified Player cost | $20/year | Covers Stripe Identity costs |
+| URL | Purpose |
+|-----|---------|
+| https://mahjic.org | Production site |
+| https://mahjic.vercel.app | Vercel URL |
+| https://github.com/egolytic/mahjic | Source code |
 
-## Files Updated
+## BAM Good Time API Key
+
+```
+mahjic_src_03388fcb2648ff18f33280b7e47e4f1e199832c96ff83621daa7282c6f769ed8
+```
+
+Store in BAM Good Time as `MAHJIC_API_KEY` environment variable.
+
+## Key Files
 
 ```
 ~/Desktop/Mahjic/
-├── README.md           ✅ Updated
-├── SPEC.md             ✅ Complete technical spec
-├── API-REFERENCE.md    ✅ API documentation
-├── LANDING-PAGE-COPY.md ✅ Website copy
-└── memory-bank/        ✅ Created
-    ├── projectbrief.md
-    ├── productContext.md
-    ├── techContext.md
-    ├── systemPatterns.md
-    ├── activeContext.md
-    └── progress.md
+├── src/
+│   ├── app/
+│   │   ├── api/v1/          # REST API endpoints
+│   │   ├── dashboard/       # Player dashboard
+│   │   ├── leaderboard/     # Public leaderboard
+│   │   ├── players/[id]/    # Player profiles
+│   │   ├── verify/          # Stripe Identity flow
+│   │   └── page.tsx         # Landing page
+│   ├── components/          # UI components
+│   ├── lib/
+│   │   ├── elo.ts           # Rating algorithm
+│   │   ├── stripe.ts        # Stripe Identity
+│   │   └── supabase/        # Database clients
+│   └── types/               # TypeScript types
+├── supabase/migrations/     # Database schema
+├── docs/plans/              # Integration plans
+└── .env.local               # Environment variables
 ```
 
 ## Current Focus
 
-Waiting for decision on next steps:
-- Build MVP?
-- Set up project structure?
-- Future project (spec is enough for now)?
+**BAM Good Time Integration** - Need to implement the other side:
+1. Create Mahjic client library in BAM
+2. Modify score submission to call Mahjic API
+3. Test end-to-end flow
 
-## Open Questions
+## Environment Variables (Vercel)
 
-1. When to start building?
-2. Should it be a monorepo with BAM Good Time or separate?
-3. Domain setup (mahjic.org DNS, hosting)?
-4. GitHub organization setup?
+All configured:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_APP_URL`
+
+## Open Tasks
+
+1. **Supabase Auth** - Add redirect URL for production login
+2. **BAM Integration** - Implement client library
+3. **Email Templates** - Configure Supabase Auth emails
