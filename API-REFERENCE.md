@@ -6,13 +6,100 @@ Base URL: `https://api.mahjic.org/v1`
 
 ## Authentication
 
-Most read endpoints are public. Write endpoints require an API key.
+All write endpoints require a Verified Source API key.
 
 ```
 Authorization: Bearer {your_api_key}
 ```
 
-Get your API key at: https://mahjic.org/developers
+Get your API key by becoming a Verified Source at: https://mahjic.org/become-a-source
+
+---
+
+## Sessions (Submit Games)
+
+### Submit Session (Auth Required)
+
+Submit game results for one or more rounds.
+
+```
+POST /sessions
+```
+
+**Request body:**
+```json
+{
+  "session_date": "2026-01-31",
+  "game_type": "league",
+  "rounds": [
+    {
+      "players": [
+        { "email": "alice@example.com", "games_played": 4, "mahjongs": 2, "points": 125 },
+        { "email": "bob@example.com", "games_played": 4, "mahjongs": 1, "points": 80 },
+        { "email": "carol@example.com", "games_played": 4, "mahjongs": 1, "points": 45 },
+        { "email": "dave@example.com", "games_played": 4, "mahjongs": 0, "points": -50 }
+      ],
+      "wall_games": 0
+    }
+  ]
+}
+```
+
+**Fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `session_date` | Yes | ISO date (YYYY-MM-DD) |
+| `game_type` | Yes | `social`, `league`, or `tournament` |
+| `rounds` | Yes | Array of rounds |
+| `rounds[].players` | Yes | 2-4 players |
+| `rounds[].players[].email` | Yes | Player email. Prefix with `PRIVATE:` or `ANON:` for privacy modes |
+| `rounds[].players[].games_played` | Yes | Number of games in this round |
+| `rounds[].players[].mahjongs` | Yes | Games won by this player |
+| `rounds[].players[].points` | League/Tournament | Points scored (required for league/tournament) |
+| `rounds[].wall_games` | Yes | Games with no winner |
+
+**Privacy prefixes:**
+- `alice@example.com` — Normal (public profile)
+- `PRIVATE:alice@example.com` — Private mode (rated but hidden from search/leaderboards)
+- `ANON:PlayerNick` — Anonymous (local to your source only, no Mahjic ID)
+
+**Validation:**
+- `sum(all mahjongs) + wall_games = games_played`
+- All players must have same `games_played` value
+
+**Response:**
+```json
+{
+  "session_id": "sess_abc123",
+  "results": [
+    {
+      "mahjic_id": "MJ-001",
+      "email": "alice@example.com",
+      "is_new_player": false,
+      "rating_before": 1600,
+      "rating_after": 1618,
+      "rating_change": 18,
+      "verified_rating_before": 1580,
+      "verified_rating_after": 1592,
+      "verified_rating_change": 12,
+      "games_played_total": 47
+    },
+    {
+      "mahjic_id": "MJ-045",
+      "email": "bob@example.com",
+      "is_new_player": true,
+      "rating_before": 1500,
+      "rating_after": 1488,
+      "rating_change": -12,
+      "verified_rating_before": 1500,
+      "verified_rating_after": 1500,
+      "verified_rating_change": 0,
+      "games_played_total": 1
+    }
+  ]
+}
+```
 
 ---
 
@@ -21,26 +108,31 @@ Get your API key at: https://mahjic.org/developers
 ### Get Player
 
 ```
-GET /players/{player_id}
+GET /players/{mahjic_id}
 ```
 
 **Response:**
 ```json
 {
-  "id": "mj_abc123",
-  "username": "TileQueen",
-  "rating": 1587,
-  "rd": 45,
-  "volatility": 0.06,
-  "games_played": 142,
-  "provisional": false
+  "mahjic_id": "MJ-001",
+  "display_name": "Alice",
+  "rating": 1618,
+  "verified_rating": 1592,
+  "games_played": 47,
+  "tier": "verified",
+  "is_private": false,
+  "joined_at": "2025-06-15"
 }
 ```
+
+**Notes:**
+- Private players return `404`
+- Anonymous players don't have Mahjic IDs
 
 ### Get Player Rating History
 
 ```
-GET /players/{player_id}/history
+GET /players/{mahjic_id}/history
 ```
 
 **Query params:**
@@ -51,11 +143,11 @@ GET /players/{player_id}/history
 **Response:**
 ```json
 {
-  "player_id": "mj_abc123",
+  "mahjic_id": "MJ-001",
   "history": [
-    { "date": "2025-01-20", "rating": 1587, "rd": 45 },
-    { "date": "2025-01-15", "rating": 1572, "rd": 48 },
-    { "date": "2025-01-10", "rating": 1560, "rd": 52 }
+    { "date": "2026-01-31", "rating": 1618, "verified_rating": 1592 },
+    { "date": "2026-01-24", "rating": 1600, "verified_rating": 1580 },
+    { "date": "2026-01-17", "rating": 1585, "verified_rating": 1570 }
   ]
 }
 ```
@@ -66,58 +158,7 @@ GET /players/{player_id}/history
 GET /players/search?q={query}
 ```
 
-Returns players matching username or display name.
-
-
----
-
-## Games
-
-### Submit Game Result (Auth Required)
-
-```
-POST /games
-```
-
-**Request body:**
-```json
-{
-  "timestamp": "2025-01-20T19:30:00Z",
-  "players": [
-    { "player_id": "mj_abc123", "position": 1, "score": 50 },
-    { "player_id": "mj_def456", "position": 2, "score": 25 },
-    { "player_id": "mj_ghi789", "position": 3, "score": 0 },
-    { "player_id": "mj_jkl012", "position": 4, "score": -25 }
-  ]
-}
-```
-
-**Notes:**
-- `position` is required (1-4)
-- `score` is optional (for margin-weighted calculations)
-- Players must exist or be created first
-
-**Response:**
-```json
-{
-  "id": "game_xyz789",
-  "status": "processed",
-  "rating_changes": [
-    { "player_id": "mj_abc123", "old_rating": 1572, "new_rating": 1587, "change": 15 },
-    { "player_id": "mj_def456", "old_rating": 1610, "new_rating": 1605, "change": -5 },
-    { "player_id": "mj_ghi789", "old_rating": 1480, "new_rating": 1475, "change": -5 },
-    { "player_id": "mj_jkl012", "old_rating": 1520, "new_rating": 1515, "change": -5 }
-  ]
-}
-```
-
-### Bulk Submit Games (Auth Required)
-
-```
-POST /games/bulk
-```
-
-Submit up to 100 games in one request. Same format as single game, but in an array.
+Returns players matching display name. Only returns non-private players.
 
 ---
 
@@ -138,12 +179,28 @@ GET /leaderboard
 ```json
 {
   "leaderboard": [
-    { "rank": 1, "player_id": "mj_xyz", "username": "MahJestic", "rating": 1892, "games_played": 234 },
-    { "rank": 2, "player_id": "mj_abc", "username": "TileQueen", "rating": 1845, "games_played": 187 }
+    {
+      "rank": 1,
+      "mahjic_id": "MJ-042",
+      "display_name": "TileQueen",
+      "verified_rating": 1892,
+      "games_played": 234
+    },
+    {
+      "rank": 2,
+      "mahjic_id": "MJ-001",
+      "display_name": "Alice",
+      "verified_rating": 1845,
+      "games_played": 187
+    }
   ],
   "total": 1247
 }
 ```
+
+**Notes:**
+- Only Verified players appear on leaderboards
+- Ranked by `verified_rating` (games against other Verified players only)
 
 ### Regional Leaderboard
 
@@ -153,57 +210,47 @@ GET /leaderboard/{region}
 
 Regions: `northeast`, `southeast`, `midwest`, `southwest`, `west`, `international`
 
-### League Leaderboard
+### Source Leaderboard
 
 ```
-GET /leagues/{league_id}/leaderboard
+GET /sources/{source_id}/leaderboard
 ```
 
-Returns rankings for players active in a specific league.
-
+Returns rankings for players who have played at a specific Verified Source.
 
 ---
 
-## Leagues
+## Verified Sources
 
-### List Leagues
+### List Sources
 
 ```
-GET /leagues
+GET /sources
 ```
 
 **Query params:**
-- `verified` — Filter to verified leagues only (boolean)
 - `region` — Filter by region
 
-### Get League
+### Get Source
 
 ```
-GET /leagues/{league_id}
+GET /sources/{source_id}
 ```
 
 **Response:**
 ```json
 {
-  "id": "league_columbus_mj",
-  "name": "Columbus Mahjong League",
+  "source_id": "bam-good-time",
+  "name": "BAM Good Time",
+  "type": "platform",
   "location": "Columbus, GA",
   "region": "southeast",
-  "verified": true,
-  "games_submitted": 847,
-  "active_players": 32,
-  "website": "https://example.com",
-  "created_at": "2024-06-01"
+  "games_submitted": 1247,
+  "active_players": 89,
+  "website": "https://bamgoodtime.com",
+  "joined_at": "2025-01-01"
 }
 ```
-
-### Register League (Auth Required)
-
-```
-POST /leagues
-```
-
-Requires organizer account.
 
 ---
 
@@ -214,10 +261,10 @@ Requires organizer account.
 Embed a player's rating on any website:
 
 ```html
-<iframe 
-  src="https://mahjic.org/embed/player/mj_abc123/badge" 
-  width="200" 
-  height="80" 
+<iframe
+  src="https://mahjic.org/embed/player/MJ-001/badge"
+  width="200"
+  height="80"
   frameborder="0">
 </iframe>
 ```
@@ -225,10 +272,10 @@ Embed a player's rating on any website:
 ### Leaderboard Widget
 
 ```html
-<iframe 
-  src="https://mahjic.org/embed/league/league_columbus_mj/leaderboard" 
-  width="400" 
-  height="500" 
+<iframe
+  src="https://mahjic.org/embed/source/bam-good-time/leaderboard"
+  width="400"
+  height="500"
   frameborder="0">
 </iframe>
 ```
@@ -236,10 +283,10 @@ Embed a player's rating on any website:
 ### Rating Chart
 
 ```html
-<iframe 
-  src="https://mahjic.org/embed/player/mj_abc123/chart" 
-  width="600" 
-  height="300" 
+<iframe
+  src="https://mahjic.org/embed/player/MJ-001/chart"
+  width="600"
+  height="300"
   frameborder="0">
 </iframe>
 ```
@@ -254,21 +301,21 @@ Register webhook URLs to receive real-time updates.
 
 | Event | Description |
 |-------|-------------|
-| `game.submitted` | New game recorded |
+| `session.submitted` | New session recorded |
 | `rating.updated` | Player rating changed |
-| `player.milestone` | Player hit rating milestone (1600, 1700, etc.) |
+| `player.verified` | Player upgraded to Verified tier |
 
 ### Webhook Payload
 
 ```json
 {
   "event": "rating.updated",
-  "timestamp": "2025-01-20T19:35:00Z",
+  "timestamp": "2026-01-31T19:35:00Z",
   "data": {
-    "player_id": "mj_abc123",
-    "old_rating": 1572,
-    "new_rating": 1587,
-    "game_id": "game_xyz789"
+    "mahjic_id": "MJ-001",
+    "old_rating": 1600,
+    "new_rating": 1618,
+    "session_id": "sess_abc123"
   }
 }
 ```
@@ -279,7 +326,6 @@ Register webhook URLs to receive real-time updates.
 
 - **Public endpoints:** 60 requests/minute
 - **Authenticated:** 300 requests/minute
-- **Bulk endpoints:** 10 requests/minute
 
 Exceeding limits returns `429 Too Many Requests`.
 
@@ -293,11 +339,21 @@ Standard HTTP status codes. Error responses include:
 {
   "error": {
     "code": "player_not_found",
-    "message": "No player exists with ID mj_invalid",
+    "message": "No player exists with ID MJ-invalid",
     "status": 404
   }
 }
 ```
+
+### Common Error Codes
+
+| Code | Description |
+|------|-------------|
+| `invalid_session` | Session data failed validation |
+| `player_not_found` | Player ID doesn't exist |
+| `source_not_verified` | Your source isn't approved yet |
+| `invalid_api_key` | API key is invalid or expired |
+| `rate_limit_exceeded` | Too many requests |
 
 ---
 

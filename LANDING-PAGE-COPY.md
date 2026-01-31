@@ -8,9 +8,9 @@
 # Your Mahjong Rating. Everywhere.
 
 **Subhead:**
-The free, open rating system for American Mahjong. Track your skill, compare with players nationwide, and take your rating wherever you play.
+The free, open rating system for American Mahjong. Play at any club, track your skill, and take your rating wherever you go.
 
-**CTA Button:** Join the Waitlist →
+**CTA Button:** Become a Verified Source →
 
 **Secondary CTA:** Learn How It Works
 
@@ -20,11 +20,11 @@ The free, open rating system for American Mahjong. Track your skill, compare wit
 
 ### The Problem with Mahjong Ratings Today
 
-You play at your local league. You're pretty good — but how good?
+Some organizations want to lock up Mahjong ratings. Play only THEIR events. Use only THEIR platform. Your rating belongs to THEM.
 
-Right now, there's no universal way to measure skill in American Mahjong. Some leagues track wins. Others don't track anything. And the ratings that do exist? They're locked in proprietary systems that don't talk to each other.
+That's not how it should work.
 
-**You deserve better.**
+**Your skill is yours. Your rating should be too.**
 
 ---
 
@@ -32,17 +32,16 @@ Right now, there's no universal way to measure skill in American Mahjong. Some l
 
 ### Introducing Mahjic
 
-A universal rating that follows you.
+The open rating system that belongs to the players.
 
-**One Rating, Any League**
-Play at different clubs? Travel for tournaments? Your Mahjic rating combines all your results into one number — no matter where you play.
+**Play Anywhere**
+Your local club. A friend's league. A tournament across the country. One rating follows you everywhere.
 
 **Open & Transparent**
-We use Glicko-2, the same proven system used by Lichess and other respected gaming platforms. The formula is public. Your rating is yours.
+The algorithm is open source. No black boxes. Anyone can verify how ratings are calculated.
 
-**Built for Community**
-Mahjic isn't owned by any single league or corporation. It's an open standard that any organizer can adopt — free.
-
+**Club-First Design**
+Verified Sources (clubs, leagues, platforms) submit results. Players don't have to do anything — just play.
 
 ---
 
@@ -50,17 +49,32 @@ Mahjic isn't owned by any single league or corporation. It's an open standard th
 
 ### How It Works
 
-**1. Create Your Profile**
-Sign up in 30 seconds. You'll start at 1500 — the same starting point for everyone.
+**1. Your Club Joins as a Verified Source**
+Any club, league, or platform can apply to become a Verified Source. It's free.
 
-**2. Play Mahjong**
-Play at any Mahjic-connected league, or log games yourself. Every game counts.
+**2. They Submit Your Games**
+After each session, your club reports results. Web form, spreadsheet upload, or API — whatever works for them.
 
-**3. Watch Your Rating Evolve**
-Win against stronger players? Your rating rises faster. Lose to weaker players? It drops more. The system rewards skill, not just volume.
+**3. Your Rating Updates**
+Mahjic calculates your new rating based on who you played and how you did. Win against better players? Bigger gains.
 
-**4. Share & Compare**
-See where you stand locally, regionally, or nationally. Challenge friends. Track your progress over time.
+**4. View Your Profile**
+See your rating, history, and where you stand. Share your profile. Track your progress over time.
+
+---
+
+## For Clubs Section
+
+### For Clubs & Leagues
+
+Running a Mahjong group? Become a Verified Source.
+
+✓ **Free forever** — No fees to submit games
+✓ **Simple submission** — Web form, spreadsheet, or API
+✓ **Attract players** — Rated play brings competitive players to your events
+✓ **No lock-in** — Your members' ratings are portable
+
+**CTA:** Apply to Become a Verified Source →
 
 ---
 
@@ -68,46 +82,64 @@ See where you stand locally, regionally, or nationally. Challenge friends. Track
 
 ### For Players
 
-✓ **Free forever** — No subscriptions, no premium tiers
-✓ **Portable** — Your rating works across any connected league
-✓ **Private by default** — Control what you share
-✓ **Historical tracking** — See your improvement over time
-✓ **Fair system** — Glicko-2 accounts for opponent strength and your own consistency
+Just play. Your club handles the rest.
+
+✓ **Automatic** — Your club submits results for you
+✓ **Portable** — Your rating works across any Verified Source
+✓ **Two ratings** — Overall (all games) + Verified (for leaderboards)
+✓ **Optional verification** — $20/year for ID-verified leaderboard status
 
 ---
 
-## For League Organizers Section
+## Player Tiers Section
 
-### For League Organizers
+### Player Tiers
 
-Running a mahjong league? Mahjic makes tracking easy.
+**Provisional** (Free)
+- Created automatically when you play at a Verified Source
+- Track your rating and history
+- Not visible on public leaderboards
 
-✓ **Free API access** — Submit game results automatically
-✓ **Embeddable leaderboards** — Show rankings on your website
-✓ **No lock-in** — Your data stays yours; export anytime
-✓ **Attract players** — Rated play brings competitive players to your events
-✓ **Simple integration** — Web form for manual entry, API for automation
-
-**CTA:** Register Your League →
+**Verified** ($20/year)
+- Stripe Identity check (government ID)
+- Appear on leaderboards
+- Verified badge on profile
+- Proves you're a real person, not a fake account
 
 ---
 
-## The Math Section (Optional — for the curious)
+## The Algorithm Section
 
 ### The Math Behind Mahjic
 
-We use **Glicko-2**, developed by Dr. Mark Glickman at Boston University. It's a refinement of the classic Elo system with three key improvements:
+We use **ELO with pairwise comparison**, adapted for 4-player Mahjong.
 
-1. **Rating Deviation (RD)** — Measures how confident we are in your rating. New players have high RD; it decreases as you play more games.
+**Win Rate Matters**
+You're compared against each player at your table. More mahjongs = higher win rate = you beat them.
 
-2. **Volatility** — Tracks how consistent you are. Erratic results? Higher volatility. Steady performance? Lower.
+**Opponent Strength Matters**
+Beat higher-rated players? Bigger gains. Lose to lower-rated players? Bigger losses.
 
-3. **Time decay** — Haven't played in a while? Your RD increases, reflecting uncertainty. This prevents "rating camping."
+**Points Bonus (Leagues)**
+For league and tournament play, point differentials add a small bonus (±5 max) on top of win-rate calculations.
 
 The formula is fully documented and open source. No black boxes.
 
 **Link:** Read the Full Technical Spec →
 
+---
+
+## Two Ratings Section
+
+### Two Ratings. One Profile.
+
+**Mahjic Rating**
+All your games, against anyone. Your complete record.
+
+**Verified Rating**
+Only games against other Verified players. Used for official leaderboards.
+
+Why two? To prevent gaming. Someone can't inflate their rating by playing fake accounts. The leaderboard only counts games against ID-verified players.
 
 ---
 
@@ -116,33 +148,39 @@ The formula is fully documented and open source. No black boxes.
 ### Questions?
 
 **Is Mahjic free?**
-Yes. Free to use, free to integrate. We may offer optional premium features for leagues in the future, but the core rating system will always be free.
+Yes for clubs and players. Verified player status costs $20/year (to cover ID verification costs).
 
-**How is this different from other mahjong ratings?**
-Most ratings are locked to a single platform or league. Mahjic is open — any league can participate, and your rating follows you everywhere. Think of it like how FIDE works for chess, but community-run and transparent.
+**How is this different from other Mahjong ratings?**
+Most ratings lock you into one platform. Mahjic is open — any club can participate, and your rating follows you everywhere.
 
 **Can I trust the ratings?**
-We use Glicko-2, a mathematically rigorous system used by major gaming platforms. Games submitted by verified leagues carry more weight, and we have anti-fraud measures in place.
+Yes. Only Verified Sources can submit games. Leaderboards only show ID-verified players. The algorithm is open source.
 
-**What if I only play casually?**
-That's fine! You can track your games for fun without worrying about rankings. Set your profile to private if you prefer.
+**What if I play at multiple clubs?**
+Great! All your games feed into one rating. Play everywhere, one number.
 
-**Can I self-report games?**
-Yes, but self-reported games require confirmation from all players and carry less weight than league-verified games.
+**What if someone at my table doesn't want to be tracked?**
+Clubs can submit them as anonymous or private. They still affect the table's ratings but won't have a public profile.
 
-**I run a league. How do I get started?**
-Sign up for an organizer account, and you can start submitting games immediately via our web form or API.
+**I run a club. How do I get started?**
+Apply to become a Verified Source. We'll review your application and get you set up with credentials.
 
 ---
 
-## Social Proof Section (Future)
+## Verified Sources Section
 
-### Trusted By
+### Verified Sources
 
-*[Logos of participating leagues — to be added]*
+These clubs and platforms submit games to Mahjic:
 
-> "Finally, a rating system that makes sense for mahjong. My players love seeing their progress."
+*[Logos of participating sources — to be added]*
+
+> "Finally, a rating system that works. My players love tracking their progress."
 > — *League Organizer, Columbus GA*
+
+**Want your club on this list?**
+
+**CTA:** Apply to Become a Verified Source →
 
 ---
 
@@ -150,11 +188,13 @@ Sign up for an organizer account, and you can start submitting games immediately
 
 ### Ready to Know Your Number?
 
-Join thousands of players tracking their mahjong journey.
+For clubs: Become a Verified Source and start submitting games.
 
-**[Join the Waitlist]** — Be first to know when we launch
+For players: Tell your club about Mahjic. Once they join, you're in.
 
-**[Register Your League]** — Get early access for organizers
+**[Become a Verified Source]** — Free for clubs and leagues
+
+**[View the Leaderboard]** — See who's on top
 
 ---
 
@@ -165,26 +205,56 @@ The open rating system for American Mahjong.
 
 - About
 - How It Works
-- For Organizers
+- For Clubs
 - API Docs
-- Blog
+- Leaderboard
 - Contact
 
-© 2025 Mahjic. Open source. Community governed.
+© 2026 Mahjic. Open source algorithm. Player-owned ratings.
 
 ---
 
 # Additional Copy Elements
 
-## Email Signup Confirmation
+## Email: Welcome to Verified Source
 
-**Subject:** You're on the Mahjic waitlist! 🀄
+**Subject:** You're a Verified Source!
 
-Welcome! You're now on the list for early access to Mahjic — the open rating system for American Mahjong.
+Welcome to Mahjic! Your club is now approved to submit game results.
 
-We'll let you know as soon as you can create your profile and start tracking your games.
+**Your credentials:**
+- Source ID: {source_id}
+- API Key: {api_key}
+- Login: mahjic.org/submit
 
-In the meantime, tell your mahjong friends. The more players who join, the better the ratings work for everyone.
+**Next steps:**
+1. Submit your first session via web form or API
+2. Share with your players — they'll see their ratings update
+3. Display the Mahjic badge on your website (optional)
+
+Questions? Reply to this email.
+
+—The Mahjic Team
+
+---
+
+## Email: You've Been Rated!
+
+**Subject:** You've got a Mahjic Rating!
+
+Hey {name},
+
+You played at {source_name} and now you have a Mahjic Rating!
+
+**Your rating:** {rating}
+**Games played:** {games}
+
+Claim your profile to:
+- See your full history
+- Track your progress
+- Optionally upgrade to Verified status for leaderboards
+
+**[Claim Your Profile]**
 
 —The Mahjic Team
 
@@ -193,17 +263,17 @@ In the meantime, tell your mahjong friends. The more players who join, the bette
 ## Tagline Options
 
 1. "Your Mahjong Rating. Everywhere."
-2. "The open standard for mahjong skill."
-3. "Track your tiles. Know your number."
+2. "Play anywhere. Own your rating."
+3. "The open standard for Mahjong skill."
 4. "One rating. Any table."
-5. "Mahjong, measured."
+5. "Mahjong, measured. Ratings, owned."
 
 ---
 
 ## Meta Description (for SEO)
 
-Mahjic is the free, open rating system for American Mahjong. Track your skill across leagues, compare with players nationwide, and own your rating forever. Join the waitlist.
+Mahjic is the free, open rating system for American Mahjong. Play at any club, track your skill, and own your rating forever. Clubs: become a Verified Source today.
 
 ---
 
-*Last updated: January 2025*
+*Last updated: January 2026*
