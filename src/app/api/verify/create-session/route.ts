@@ -1,16 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import { createVerificationSession } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * API route to create a Stripe Identity verification session.
+ * POST /api/verify/create-session
  *
- * TODO: Implement Stripe Identity integration
- * 1. Create a Stripe Identity VerificationSession
- * 2. Store session ID in database linked to player
- * 3. Return client_secret for frontend to open verification modal
- *
- * Stripe Identity docs: https://docs.stripe.com/identity
+ * Creates a Stripe Identity verification session for ID verification.
+ * The player must be logged in and own the player profile.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -61,52 +58,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Create Stripe Identity verification session
-    // Example implementation:
-    //
-    // import Stripe from 'stripe';
-    // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    //
-    // const verificationSession = await stripe.identity.verificationSessions.create({
-    //   type: 'document',
-    //   metadata: {
-    //     player_id: playerId,
-    //     user_id: user.id,
-    //   },
-    //   options: {
-    //     document: {
-    //       allowed_types: ['driving_license', 'passport', 'id_card'],
-    //       require_id_number: false,
-    //       require_live_capture: true,
-    //       require_matching_selfie: true,
-    //     },
-    //   },
-    //   return_url: `${process.env.NEXT_PUBLIC_APP_URL}/verify/complete`,
-    // });
-    //
-    // // Store verification session in database
-    // await supabase.from('verification_sessions').insert({
-    //   player_id: playerId,
-    //   stripe_session_id: verificationSession.id,
-    //   status: 'pending',
-    // });
-    //
-    // return NextResponse.json({
-    //   url: verificationSession.url,
-    //   client_secret: verificationSession.client_secret,
-    // });
+    // Check for existing pending verification
+    const { data: existingSession } = await supabase
+      .from("verification_sessions")
+      .select("*")
+      .eq("player_id", playerId)
+      .eq("status", "pending")
+      .single();
 
-    // Placeholder response until Stripe is integrated
+    if (existingSession) {
+      return NextResponse.json(
+        { error: "You already have a pending verification. Please complete it or wait for it to expire." },
+        { status: 400 }
+      );
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    // Create Stripe Identity verification session
+    const verificationSession = await createVerificationSession({
+      playerId,
+      userId: user.id,
+      returnUrl: `${appUrl}/verify/complete?session_id={CHECKOUT_SESSION_ID}`,
+    });
+
+    // Store verification session in database
+    const { error: insertError } = await supabase
+      .from("verification_sessions")
+      .insert({
+        player_id: playerId,
+        stripe_session_id: verificationSession.id,
+        status: "pending",
+      });
+
+    if (insertError) {
+      console.error("Failed to store verification session:", insertError);
+      // Continue anyway - the verification can still work
+    }
+
     return NextResponse.json({
-      error: "Stripe Identity integration not yet implemented. Add STRIPE_SECRET_KEY to .env.local",
-      // Uncomment below once Stripe is configured:
-      // url: verificationSession.url,
-    }, { status: 501 });
+      url: verificationSession.url,
+      sessionId: verificationSession.id,
+    });
 
   } catch (error) {
     console.error("Create verification session error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: "Failed to create verification session" },
       { status: 500 }
     );
   }
