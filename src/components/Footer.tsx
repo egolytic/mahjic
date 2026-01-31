@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Logo } from './Logo';
 
 export function Footer() {
   return (
@@ -7,8 +8,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="text-2xl font-display font-bold text-cream">
-              Mahjic
+            <Link href="/">
+              <Logo variant="white" size="lg" />
             </Link>
             <p className="mt-4 text-cream/80 max-w-md">
               The open rating system for American Mahjong. Open source algorithm. Player-owned ratings.
