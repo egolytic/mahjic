@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "pattern": "git commit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\n📝 Commit complete! Consider running /workflow:update-memory to save learnings.\n'"
+          }
+        ]
+      }
+    ]
+  }
+}
