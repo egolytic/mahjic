@@ -91,21 +91,21 @@ export default function BecomeASourcePage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-[#faf8f3] flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-green/10 p-8 text-center">
+          <div className="w-16 h-16 bg-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-green-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="font-display text-2xl font-bold text-text mb-2">Application Submitted!</h1>
+          <p className="text-text-light mb-6">
             Thank you for applying to become a Verified Source. We&apos;ll review your application and
             get back to you within a few business days.
           </p>
           <Link
             href="/"
-            className="inline-flex items-center justify-center rounded-full bg-[#2d5a4a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3d7a6a] transition-all"
+            className="inline-flex items-center justify-center rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white hover:bg-coral-hover transition-all"
           >
             Back to Home
           </Link>
@@ -115,12 +115,13 @@ export default function BecomeASourcePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf8f3]">
+    <div className="min-h-screen bg-cream">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-aqua-soft border-b border-green/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Become a Verified Source</h1>
-          <p className="mt-2 text-lg text-gray-600">
+          <p className="section-label">For Clubs</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-text">Become a Verified Source</h1>
+          <p className="mt-2 text-lg text-text-light">
             Submit games to Mahjic and give your players portable ratings
           </p>
         </div>
@@ -130,77 +131,77 @@ export default function BecomeASourcePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Benefits */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">What is a Verified Source?</h2>
-            <p className="text-gray-600 mb-8">
+            <h2 className="font-display text-2xl font-bold text-text mb-6">What is a Verified Source?</h2>
+            <p className="text-text-light mb-8">
               Verified Sources are clubs, leagues, and platforms authorized to submit game results to Mahjic.
               Only games from Verified Sources count toward player ratings.
             </p>
 
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Benefits</h3>
+            <h3 className="font-display text-lg font-semibold text-text mb-4">Benefits</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#2d5a4a]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-[#2d5a4a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-6 h-6 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-green-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <strong className="text-gray-900">Free Forever</strong>
-                  <p className="text-gray-600 text-sm">No fees to join or submit games. Mahjic is free for all clubs.</p>
+                  <strong className="text-text">Free Forever</strong>
+                  <p className="text-text-light text-sm">No fees to join or submit games. Mahjic is free for all clubs.</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#2d5a4a]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-[#2d5a4a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-6 h-6 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-green-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <strong className="text-gray-900">Multiple Submission Methods</strong>
-                  <p className="text-gray-600 text-sm">Use our web form, upload a spreadsheet, or integrate via API.</p>
+                  <strong className="text-text">Multiple Submission Methods</strong>
+                  <p className="text-text-light text-sm">Use our web form, upload a spreadsheet, or integrate via API.</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#2d5a4a]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-[#2d5a4a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-6 h-6 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-green-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <strong className="text-gray-900">Attract Competitive Players</strong>
-                  <p className="text-gray-600 text-sm">Players seeking rated games will discover your club.</p>
+                  <strong className="text-text">Attract Competitive Players</strong>
+                  <p className="text-text-light text-sm">Players seeking rated games will discover your club.</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-[#2d5a4a]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-4 h-4 text-[#2d5a4a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-6 h-6 bg-green/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-green-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <strong className="text-gray-900">No Lock-In</strong>
-                  <p className="text-gray-600 text-sm">Your members&apos; ratings are portable and belong to them.</p>
+                  <strong className="text-text">No Lock-In</strong>
+                  <p className="text-text-light text-sm">Your members&apos; ratings are portable and belong to them.</p>
                 </div>
               </li>
             </ul>
 
-            <div className="mt-8 p-6 bg-white rounded-xl border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">What Happens Next?</h3>
-              <ol className="space-y-3 text-sm text-gray-600">
+            <div className="mt-8 p-6 bg-white rounded-xl border border-green/10">
+              <h3 className="font-display text-lg font-semibold text-text mb-3">What Happens Next?</h3>
+              <ol className="space-y-3 text-sm text-text-light">
                 <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 bg-[#d4a84b] text-white rounded-full text-xs font-bold flex-shrink-0">1</span>
+                  <span className="flex items-center justify-center w-6 h-6 bg-gold text-white rounded-full text-xs font-bold flex-shrink-0">1</span>
                   <span>Submit your application (2 minutes)</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 bg-[#d4a84b] text-white rounded-full text-xs font-bold flex-shrink-0">2</span>
+                  <span className="flex items-center justify-center w-6 h-6 bg-gold text-white rounded-full text-xs font-bold flex-shrink-0">2</span>
                   <span>We review your application (1-3 business days)</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 bg-[#d4a84b] text-white rounded-full text-xs font-bold flex-shrink-0">3</span>
+                  <span className="flex items-center justify-center w-6 h-6 bg-gold text-white rounded-full text-xs font-bold flex-shrink-0">3</span>
                   <span>Receive your API key and login credentials</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-6 h-6 bg-[#d4a84b] text-white rounded-full text-xs font-bold flex-shrink-0">4</span>
+                  <span className="flex items-center justify-center w-6 h-6 bg-gold text-white rounded-full text-xs font-bold flex-shrink-0">4</span>
                   <span>Start submitting games!</span>
                 </li>
               </ol>
@@ -209,8 +210,8 @@ export default function BecomeASourcePage() {
 
           {/* Application Form */}
           <div>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Apply Now</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-green/10 p-6 sm:p-8">
+              <h2 className="font-display text-xl font-bold text-text mb-6">Apply Now</h2>
 
               {submitError && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -221,8 +222,8 @@ export default function BecomeASourcePage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Organization Name */}
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Organization Name <span className="text-red-500">*</span>
+                  <label htmlFor="name" className="block text-sm font-medium text-text mb-2">
+                    Organization Name <span className="text-coral">*</span>
                   </label>
                   <input
                     type="text"
@@ -231,8 +232,8 @@ export default function BecomeASourcePage() {
                     value={formData.name}
                     onChange={handleChange}
                     className={`w-full px-4 py-3 rounded-lg border ${
-                      errors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2d5a4a]'
-                    } focus:ring-2 focus:border-transparent transition-colors`}
+                      errors.name ? 'border-red-300 focus:ring-red-500' : 'border-green/20 focus:ring-green-deep'
+                    } focus:ring-2 focus:border-transparent transition-colors bg-cream`}
                     placeholder="Columbus Mahjong Club"
                   />
                   {errors.name && (
@@ -242,8 +243,8 @@ export default function BecomeASourcePage() {
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact Email <span className="text-red-500">*</span>
+                  <label htmlFor="email" className="block text-sm font-medium text-text mb-2">
+                    Contact Email <span className="text-coral">*</span>
                   </label>
                   <input
                     type="email"
@@ -252,8 +253,8 @@ export default function BecomeASourcePage() {
                     value={formData.email}
                     onChange={handleChange}
                     className={`w-full px-4 py-3 rounded-lg border ${
-                      errors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2d5a4a]'
-                    } focus:ring-2 focus:border-transparent transition-colors`}
+                      errors.email ? 'border-red-300 focus:ring-red-500' : 'border-green/20 focus:ring-green-deep'
+                    } focus:ring-2 focus:border-transparent transition-colors bg-cream`}
                     placeholder="organizer@example.com"
                   />
                   {errors.email && (
@@ -263,7 +264,7 @@ export default function BecomeASourcePage() {
 
                 {/* Website */}
                 <div>
-                  <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="website" className="block text-sm font-medium text-text mb-2">
                     Website or Social Media
                   </label>
                   <input
@@ -272,16 +273,16 @@ export default function BecomeASourcePage() {
                     name="website"
                     value={formData.website}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2d5a4a] focus:border-transparent transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-green/20 focus:ring-2 focus:ring-green-deep focus:border-transparent transition-colors bg-cream"
                     placeholder="https://yourclub.com or Facebook group URL"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Optional, but helps us verify your organization</p>
+                  <p className="mt-1 text-xs text-text-light">Optional, but helps us verify your organization</p>
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tell us about your club <span className="text-red-500">*</span>
+                  <label htmlFor="description" className="block text-sm font-medium text-text mb-2">
+                    Tell us about your club <span className="text-coral">*</span>
                   </label>
                   <textarea
                     id="description"
@@ -290,8 +291,8 @@ export default function BecomeASourcePage() {
                     onChange={handleChange}
                     rows={4}
                     className={`w-full px-4 py-3 rounded-lg border ${
-                      errors.description ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2d5a4a]'
-                    } focus:ring-2 focus:border-transparent transition-colors resize-none`}
+                      errors.description ? 'border-red-300 focus:ring-red-500' : 'border-green/20 focus:ring-green-deep'
+                    } focus:ring-2 focus:border-transparent transition-colors resize-none bg-cream`}
                     placeholder="How many members? How often do you play? Is it a casual club, league, or both?"
                   />
                   {errors.description && (
@@ -303,7 +304,7 @@ export default function BecomeASourcePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full inline-flex items-center justify-center rounded-full bg-[#2d5a4a] px-6 py-3.5 text-base font-semibold text-white hover:bg-[#3d7a6a] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center rounded-full bg-coral px-6 py-3.5 text-base font-semibold text-white hover:bg-coral-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
@@ -319,7 +320,7 @@ export default function BecomeASourcePage() {
                 </button>
               </form>
 
-              <p className="mt-6 text-xs text-gray-500 text-center">
+              <p className="mt-6 text-xs text-text-light text-center">
                 By submitting, you agree to follow the Mahjic community guidelines and submit accurate game data.
               </p>
             </div>

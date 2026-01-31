@@ -2,42 +2,42 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="bg-[#1d3a3a] text-white">
+    <footer className="bg-green-deep text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="text-2xl font-bold text-white">
+            <Link href="/" className="text-2xl font-display font-bold text-cream">
               Mahjic
             </Link>
-            <p className="mt-4 text-gray-300 max-w-md">
+            <p className="mt-4 text-cream/80 max-w-md">
               The open rating system for American Mahjong. Open source algorithm. Player-owned ratings.
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h3 className="text-sm font-semibold text-[#d4a84b] uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-coral uppercase tracking-[3px]">
               Platform
             </h3>
             <ul className="mt-4 space-y-3">
               <li>
-                <Link href="/#how-it-works" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/#how-it-works" className="text-cream/80 hover:text-coral transition-colors">
                   How It Works
                 </Link>
               </li>
               <li>
-                <Link href="/leaderboard" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/leaderboard" className="text-cream/80 hover:text-coral transition-colors">
                   Leaderboard
                 </Link>
               </li>
               <li>
-                <Link href="/become-a-source" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/become-a-source" className="text-cream/80 hover:text-coral transition-colors">
                   For Clubs
                 </Link>
               </li>
               <li>
-                <Link href="/#for-players" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/#for-players" className="text-cream/80 hover:text-coral transition-colors">
                   For Players
                 </Link>
               </li>
@@ -45,17 +45,17 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-[#d4a84b] uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-coral uppercase tracking-[3px]">
               Resources
             </h3>
             <ul className="mt-4 space-y-3">
               <li>
-                <Link href="/#algorithm" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/#algorithm" className="text-cream/80 hover:text-coral transition-colors">
                   The Algorithm
                 </Link>
               </li>
               <li>
-                <Link href="/#faq" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/#faq" className="text-cream/80 hover:text-coral transition-colors">
                   FAQ
                 </Link>
               </li>
@@ -64,7 +64,7 @@ export function Footer() {
                   href="https://github.com/mahjic"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-white transition-colors"
+                  className="text-cream/80 hover:text-coral transition-colors"
                 >
                   GitHub
                 </a>
@@ -73,8 +73,8 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-700">
-          <p className="text-center text-gray-400 text-sm">
+        <div className="mt-12 pt-8 border-t border-cream/20">
+          <p className="text-center text-cream/60 text-sm">
             &copy; {new Date().getFullYear()} Mahjic. Open source algorithm. Player-owned ratings.
           </p>
         </div>

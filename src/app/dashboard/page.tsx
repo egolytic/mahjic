@@ -25,9 +25,9 @@ function getRatingTier(rating: number): string {
  */
 function getTierBadgeClasses(tier: PlayerTier): string {
   if (tier === "verified") {
-    return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200";
+    return "bg-gold/20 text-gold";
   }
-  return "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200";
+  return "bg-text-light/10 text-text-light";
 }
 
 export default async function DashboardPage() {
@@ -95,13 +95,13 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <div className="min-h-screen bg-cream">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <header className="border-b border-green/10 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <Link
             href="/"
-            className="text-xl font-bold text-zinc-900 dark:text-zinc-50"
+            className="text-xl font-display font-bold text-green-deep"
           >
             Mahjic
           </Link>
@@ -111,11 +111,11 @@ export default async function DashboardPage() {
 
       <main className="mx-auto max-w-5xl px-4 py-8">
         {/* Profile Section */}
-        <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-8 rounded-2xl border border-green/10 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                <h1 className="font-display text-2xl font-bold text-text">
                   {playerData.name}
                 </h1>
                 <span
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
                   {playerData.tier === "verified" ? "Verified" : "Provisional"}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 text-sm text-text-light">
                 {user.email}
               </p>
             </div>
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
             {playerData.tier === "provisional" && (
               <Link
                 href="/verify"
-                className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+                className="inline-flex items-center justify-center rounded-full bg-coral px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-coral-hover"
               >
                 Upgrade to Verified
               </Link>
@@ -141,49 +141,49 @@ export default async function DashboardPage() {
 
           {/* Ratings */}
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="rounded-xl bg-aqua-soft p-4">
+              <p className="text-sm text-text-light">
                 Mahjic Rating
               </p>
-              <p className="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+              <p className="mt-1 font-display text-3xl font-bold text-text">
                 {playerData.mahjic_rating}
               </p>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+              <p className="mt-1 text-sm text-text-light">
                 {getRatingTier(playerData.mahjic_rating)}
               </p>
             </div>
 
-            <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="rounded-xl bg-aqua-soft p-4">
+              <p className="text-sm text-text-light">
                 Verified Rating
               </p>
-              <p className="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+              <p className="mt-1 font-display text-3xl font-bold text-text">
                 {playerData.verified_rating}
               </p>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+              <p className="mt-1 text-sm text-text-light">
                 {playerData.tier === "verified"
                   ? getRatingTier(playerData.verified_rating)
                   : "Upgrade to unlock"}
               </p>
             </div>
 
-            <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="rounded-xl bg-aqua-soft p-4">
+              <p className="text-sm text-text-light">
                 Games Played
               </p>
-              <p className="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+              <p className="mt-1 font-display text-3xl font-bold text-text">
                 {playerData.games_played}
               </p>
             </div>
 
-            <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="rounded-xl bg-aqua-soft p-4">
+              <p className="text-sm text-text-light">
                 Leaderboard Status
               </p>
-              <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <p className="mt-1 font-display text-lg font-semibold text-text">
                 {playerData.tier === "verified" ? "Visible" : "Hidden"}
               </p>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+              <p className="mt-1 text-sm text-text-light">
                 {playerData.tier === "verified"
                   ? "You appear on public leaderboards"
                   : "Verify to appear on leaderboards"}
@@ -193,8 +193,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* Game History Section */}
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <div className="rounded-2xl border border-green/10 bg-white p-6 shadow-sm">
+          <h2 className="font-display text-lg font-semibold text-text">
             Recent Games
           </h2>
 
@@ -202,20 +202,20 @@ export default async function DashboardPage() {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                    <th className="pb-3 text-left font-medium text-zinc-500 dark:text-zinc-400">
+                  <tr className="border-b border-green/10">
+                    <th className="pb-3 text-left font-medium text-text-light">
                       Date
                     </th>
-                    <th className="pb-3 text-left font-medium text-zinc-500 dark:text-zinc-400">
+                    <th className="pb-3 text-left font-medium text-text-light">
                       Source
                     </th>
-                    <th className="pb-3 text-left font-medium text-zinc-500 dark:text-zinc-400">
+                    <th className="pb-3 text-left font-medium text-text-light">
                       Type
                     </th>
-                    <th className="pb-3 text-right font-medium text-zinc-500 dark:text-zinc-400">
+                    <th className="pb-3 text-right font-medium text-text-light">
                       Mahjongs
                     </th>
-                    <th className="pb-3 text-right font-medium text-zinc-500 dark:text-zinc-400">
+                    <th className="pb-3 text-right font-medium text-text-light">
                       Rating Change
                     </th>
                   </tr>
@@ -224,29 +224,29 @@ export default async function DashboardPage() {
                   {recentGames.map((game) => (
                     <tr
                       key={game.id}
-                      className="border-b border-zinc-100 dark:border-zinc-800"
+                      className="border-b border-green/5"
                     >
-                      <td className="py-3 text-zinc-900 dark:text-zinc-50">
+                      <td className="py-3 text-text">
                         {new Date(
                           game.game_sessions?.session_date || game.created_at
                         ).toLocaleDateString()}
                       </td>
-                      <td className="py-3 text-zinc-600 dark:text-zinc-300">
+                      <td className="py-3 text-text-light">
                         {game.game_sessions?.verified_sources?.name || "Unknown"}
                       </td>
-                      <td className="py-3 capitalize text-zinc-600 dark:text-zinc-300">
+                      <td className="py-3 capitalize text-text-light">
                         {game.game_sessions?.game_type || "-"}
                       </td>
-                      <td className="py-3 text-right text-zinc-900 dark:text-zinc-50">
+                      <td className="py-3 text-right text-text">
                         {game.mahjongs} / {game.games_played}
                       </td>
                       <td
                         className={`py-3 text-right font-medium ${
                           game.rating_change > 0
-                            ? "text-emerald-600 dark:text-emerald-400"
+                            ? "text-green-deep"
                             : game.rating_change < 0
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-zinc-500"
+                              ? "text-coral"
+                              : "text-text-light"
                         }`}
                       >
                         {game.rating_change > 0 ? "+" : ""}
@@ -258,11 +258,11 @@ export default async function DashboardPage() {
               </table>
             </div>
           ) : (
-            <div className="mt-4 rounded-lg bg-zinc-50 p-8 text-center dark:bg-zinc-800">
-              <p className="text-zinc-600 dark:text-zinc-300">
+            <div className="mt-4 rounded-xl bg-aqua-soft p-8 text-center">
+              <p className="text-text-light">
                 No games recorded yet
               </p>
-              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="mt-2 text-sm text-text-light/70">
                 Play a rated game at any Verified Source to see your history
                 here
               </p>

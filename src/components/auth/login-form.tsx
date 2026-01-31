@@ -51,11 +51,11 @@ export function LoginForm() {
 
   if (emailSent) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-2xl border border-green/10 bg-white p-8 shadow-sm">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green/20">
             <svg
-              className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+              className="h-6 w-6 text-green-deep"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -68,13 +68,13 @@ export function LoginForm() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="font-display text-xl font-semibold text-text">
             Check your email
           </h2>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+          <p className="mt-2 text-text-light">
             We sent a magic link to <strong>{email}</strong>
           </p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
+          <p className="mt-1 text-sm text-text-light/70">
             Click the link in your email to sign in
           </p>
         </div>
@@ -84,7 +84,7 @@ export function LoginForm() {
             setEmailSent(false);
             setEmail("");
           }}
-          className="mt-6 w-full text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+          className="mt-6 w-full text-sm text-text-light hover:text-coral"
         >
           Use a different email
         </button>
@@ -93,10 +93,10 @@ export function LoginForm() {
   }
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-2xl border border-green/10 bg-white p-8 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -104,7 +104,7 @@ export function LoginForm() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-sm font-medium text-text"
           >
             Email address
           </label>
@@ -115,7 +115,7 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400"
+            className="mt-1 block w-full rounded-lg border border-green/20 bg-cream px-3 py-2 text-text placeholder-text-light/50 focus:border-green-deep focus:outline-none focus:ring-1 focus:ring-green-deep"
             placeholder="you@example.com"
           />
         </div>
@@ -123,7 +123,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={isLoading || !email}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="w-full rounded-full bg-coral px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-coral-hover disabled:opacity-50"
         >
           {isLoading ? "Sending..." : "Send Magic Link"}
         </button>
@@ -132,15 +132,15 @@ export function LoginForm() {
       <div className="mt-6">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+            <div className="w-full border-t border-green/10" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+            <span className="bg-white px-2 text-text-light">
               No password needed
             </span>
           </div>
         </div>
-        <p className="mt-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-4 text-center text-sm text-text-light">
           We&apos;ll send you an email with a secure link to sign in instantly
         </p>
       </div>

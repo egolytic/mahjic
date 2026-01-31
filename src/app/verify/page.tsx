@@ -32,12 +32,12 @@ export default async function VerifyPage() {
   // Check if already verified
   if (player?.tier === "verified") {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
-        <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="min-h-screen bg-cream">
+        <header className="border-b border-green/10 bg-white">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
             <Link
               href="/"
-              className="text-xl font-bold text-zinc-900 dark:text-zinc-50"
+              className="text-xl font-display font-bold text-green-deep"
             >
               Mahjic
             </Link>
@@ -46,10 +46,10 @@ export default async function VerifyPage() {
         </header>
 
         <main className="mx-auto max-w-xl px-4 py-12">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-8 text-center dark:border-emerald-900 dark:bg-emerald-950">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+          <div className="rounded-2xl border border-green/20 bg-green/10 p-8 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green/20">
               <svg
-                className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+                className="h-6 w-6 text-green-deep"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -62,16 +62,16 @@ export default async function VerifyPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-xl font-semibold text-emerald-800 dark:text-emerald-200">
+            <h1 className="font-display text-xl font-semibold text-green-deep">
               Already Verified
             </h1>
-            <p className="mt-2 text-emerald-600 dark:text-emerald-300">
+            <p className="mt-2 text-text-light">
               Your account is already verified. You appear on leaderboards and
               have a verified badge.
             </p>
             <Link
               href="/dashboard"
-              className="mt-6 inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+              className="mt-6 inline-flex items-center justify-center rounded-full bg-coral px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-coral-hover"
             >
               Go to Dashboard
             </Link>
@@ -82,13 +82,13 @@ export default async function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <div className="min-h-screen bg-cream">
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <header className="border-b border-green/10 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <Link
             href="/"
-            className="text-xl font-bold text-zinc-900 dark:text-zinc-50"
+            className="text-xl font-display font-bold text-green-deep"
           >
             Mahjic
           </Link>
@@ -97,23 +97,23 @@ export default async function VerifyPage() {
       </header>
 
       <main className="mx-auto max-w-xl px-4 py-12">
-        <div className="rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+        <div className="rounded-2xl border border-green/10 bg-white p-8 shadow-sm">
+          <h1 className="font-display text-2xl font-bold text-text">
             Upgrade to Verified
           </h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+          <p className="mt-2 text-text-light">
             Verify your identity to unlock all Mahjic features
           </p>
 
           {/* Benefits */}
           <div className="mt-6 space-y-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <h2 className="section-label">
               Verified Benefits
             </h2>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <svg
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-deep"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -125,14 +125,14 @@ export default async function VerifyPage() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                <span className="text-zinc-700 dark:text-zinc-300">
-                  <strong>Appear on Leaderboards</strong> - Compete for regional
+                <span className="text-text-light">
+                  <strong className="text-text">Appear on Leaderboards</strong> - Compete for regional
                   and global rankings
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <svg
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-deep"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -144,14 +144,14 @@ export default async function VerifyPage() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                <span className="text-zinc-700 dark:text-zinc-300">
-                  <strong>Verified Badge</strong> - Show others your identity is
+                <span className="text-text-light">
+                  <strong className="text-text">Verified Badge</strong> - Show others your identity is
                   confirmed
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <svg
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-deep"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -163,14 +163,14 @@ export default async function VerifyPage() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                <span className="text-zinc-700 dark:text-zinc-300">
-                  <strong>Verified Rating</strong> - Get a separate rating based
+                <span className="text-text-light">
+                  <strong className="text-text">Verified Rating</strong> - Get a separate rating based
                   on games vs other verified players
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <svg
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-deep"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -182,8 +182,8 @@ export default async function VerifyPage() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                <span className="text-zinc-700 dark:text-zinc-300">
-                  <strong>Anti-Fraud Protection</strong> - ID verification
+                <span className="text-text-light">
+                  <strong className="text-text">Anti-Fraud Protection</strong> - ID verification
                   prevents fake accounts from gaming the system
                 </span>
               </li>
@@ -191,17 +191,17 @@ export default async function VerifyPage() {
           </div>
 
           {/* Pricing */}
-          <div className="mt-8 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
+          <div className="mt-8 rounded-xl bg-gold/10 p-4 border border-gold/20">
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <span className="font-display text-lg font-semibold text-text">
                 Annual Verification
               </span>
-              <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              <span className="font-display text-2xl font-bold text-gold">
                 $20
-                <span className="text-sm font-normal text-zinc-500">/year</span>
+                <span className="text-sm font-normal text-text-light">/year</span>
               </span>
             </div>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-text-light">
               Includes government ID verification via Stripe Identity
             </p>
           </div>
@@ -210,10 +210,10 @@ export default async function VerifyPage() {
           <VerifyForm playerId={player?.id} />
 
           {/* Security Note */}
-          <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="mt-6 rounded-xl border border-green/10 bg-aqua-soft p-4">
             <div className="flex gap-3">
               <svg
-                className="h-5 w-5 flex-shrink-0 text-zinc-400"
+                className="h-5 w-5 flex-shrink-0 text-text-light"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -226,10 +226,10 @@ export default async function VerifyPage() {
                 />
               </svg>
               <div className="text-sm">
-                <p className="font-medium text-zinc-700 dark:text-zinc-300">
+                <p className="font-medium text-text">
                   Secure Identity Verification
                 </p>
-                <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                <p className="mt-1 text-text-light">
                   We use Stripe Identity for secure government ID verification.
                   Mahjic never stores your ID documents.
                 </p>
