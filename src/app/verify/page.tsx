@@ -340,6 +340,7 @@ export default async function VerifyPage({
               {/* Verification Form */}
               <VerifyForm
                 playerId={player?.id}
+                userEmail={user.email}
                 verificationStatus={player?.verification_status || "none"}
                 attemptsUsed={player?.verification_attempts || 0}
                 maxAttempts={MAX_VERIFICATION_ATTEMPTS}

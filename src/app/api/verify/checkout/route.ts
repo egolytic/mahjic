@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createCheckoutSession } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -8,6 +9,8 @@ import type { NextRequest } from "next/server";
  *
  * Creates a Stripe Checkout session for the $20 verification fee.
  * Payment must be completed before identity verification.
+ *
+ * If the user doesn't have a player profile yet, one will be created.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -26,28 +29,72 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { playerId } = await request.json();
+    const { playerId, userEmail } = await request.json();
 
-    if (!playerId) {
-      return NextResponse.json(
-        { error: "Player ID is required" },
-        { status: 400 }
-      );
-    }
+    let player;
 
-    // Verify the player belongs to this user
-    const { data: player, error: playerError } = await supabase
-      .from("players")
-      .select("*")
-      .eq("id", playerId)
-      .eq("auth_user_id", user.id)
-      .single();
+    if (playerId) {
+      // Verify the existing player belongs to this user
+      const { data: existingPlayer, error: playerError } = await supabase
+        .from("players")
+        .select("*")
+        .eq("id", playerId)
+        .eq("auth_user_id", user.id)
+        .single();
 
-    if (playerError || !player) {
-      return NextResponse.json(
-        { error: "Player not found or not owned by you" },
-        { status: 404 }
-      );
+      if (playerError || !existingPlayer) {
+        return NextResponse.json(
+          { error: "Player not found or not owned by you" },
+          { status: 404 }
+        );
+      }
+
+      player = existingPlayer;
+    } else {
+      // No playerId provided - check if user already has a player profile
+      const { data: existingPlayer } = await supabase
+        .from("players")
+        .select("*")
+        .eq("auth_user_id", user.id)
+        .single();
+
+      if (existingPlayer) {
+        player = existingPlayer;
+      } else {
+        // Create a new player profile for this user
+        const adminSupabase = createAdminClient();
+        const playerName = user.user_metadata?.full_name
+          || user.email?.split("@")[0]
+          || "Player";
+
+        const { data: newPlayer, error: createError } = await adminSupabase
+          .from("players")
+          .insert({
+            name: playerName,
+            email: user.email || userEmail,
+            auth_user_id: user.id,
+            tier: "provisional",
+            mahjic_rating: 1500,
+            verified_rating: 1500,
+            games_played: 0,
+            mahjongs: 0,
+            wall_games: 0,
+            verification_status: "none",
+            verification_attempts: 0,
+          })
+          .select()
+          .single();
+
+        if (createError || !newPlayer) {
+          console.error("Failed to create player:", createError);
+          return NextResponse.json(
+            { error: "Failed to create player profile" },
+            { status: 500 }
+          );
+        }
+
+        player = newPlayer;
+      }
     }
 
     // Check if already paid or verified
@@ -69,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Create Stripe Checkout session for $20 payment
     const checkoutSession = await createCheckoutSession({
-      playerId,
+      playerId: player.id,
       userId: user.id,
       customerEmail: user.email || player.email,
       successUrl: `${appUrl}/verify?payment=success`,

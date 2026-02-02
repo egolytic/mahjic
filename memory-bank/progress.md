@@ -63,6 +63,15 @@
 - [x] Fix Supabase Auth redirect URL for production login
 - [x] Test end-to-end verification flow in browser
 
+### Verification UX Improvements (Feb 2, 2026) ✅
+
+- [x] Add prominent "Get Verified" CTAs to homepage
+- [x] Add verification banner to dashboard for provisional players
+- [x] Allow new users to verify without existing player profile
+- [x] Auto-create player profile during checkout (1500 starting rating)
+- [x] Update BAM integration plan with account linking flow
+- [x] Deploy to production
+
 ## In Progress
 
 ### BAM Good Time Integration

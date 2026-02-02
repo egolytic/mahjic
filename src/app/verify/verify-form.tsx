@@ -5,6 +5,7 @@ import type { VerificationStatus } from "@/types";
 
 interface VerifyFormProps {
   playerId?: string;
+  userEmail?: string;
   verificationStatus: VerificationStatus;
   attemptsUsed: number;
   maxAttempts: number;
@@ -12,6 +13,7 @@ interface VerifyFormProps {
 
 export function VerifyForm({
   playerId,
+  userEmail,
   verificationStatus,
   attemptsUsed,
   maxAttempts,
@@ -27,10 +29,11 @@ export function VerifyForm({
     setError(null);
 
     try {
+      // If no playerId, we'll create a player during checkout
       const response = await fetch("/api/verify/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId }),
+        body: JSON.stringify({ playerId, userEmail }),
       });
 
       const data = await response.json();
@@ -88,19 +91,18 @@ export function VerifyForm({
         </div>
       )}
 
-      {!playerId && (
-        <div className="mb-4 rounded-lg border border-gold/30 bg-gold/10 p-3 text-sm text-gold-hover">
-          You need to claim a player profile before you can verify. Play a game
-          at a Verified Source first.
-        </div>
-      )}
-
       {/* Not paid yet - show payment button */}
       {verificationStatus === "none" && (
         <>
+          {!playerId && (
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+              <strong>New to Mahjic?</strong> No problem! We&apos;ll create your player profile when you verify.
+              You&apos;ll start with a 1500 rating.
+            </div>
+          )}
           <button
             onClick={handlePayment}
-            disabled={isLoading || !playerId}
+            disabled={isLoading}
             className="w-full rounded-full bg-coral px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-coral-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? "Starting..." : "Pay $20 - Become Verified"}

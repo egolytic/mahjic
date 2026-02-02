@@ -18,19 +18,19 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/become-a-source"
+                href="/verify"
                 className="btn btn-primary rounded-full shadow-lg hover:shadow-xl"
               >
-                Become a Verified Source
+                Get Verified - $20/year
                 <svg className="ml-2 h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </Link>
               <Link
-                href="#how-it-works"
+                href="/become-a-source"
                 className="btn btn-outline rounded-full"
               >
-                Learn How It Works
+                For Clubs
               </Link>
             </div>
           </div>
@@ -375,6 +375,12 @@ export default function Home() {
                   Proves you&apos;re a real person, not a fake account
                 </li>
               </ul>
+              <Link
+                href="/verify"
+                className="mt-6 block w-full text-center rounded-full bg-coral px-4 py-3 text-sm font-semibold text-white hover:bg-coral-hover transition-all"
+              >
+                Get Verified
+              </Link>
             </div>
           </div>
         </div>
@@ -521,21 +527,26 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-display text-3xl sm:text-4xl font-bold">Ready to Know Your Number?</h2>
           <p className="mt-4 text-lg text-cream/80 max-w-2xl mx-auto">
-            For clubs: Become a Verified Source and start submitting games.
-            For players: Tell your club about Mahjic. Once they join, you&apos;re in.
+            Get verified to appear on leaderboards and prove you&apos;re a real player.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/become-a-source"
+              href="/verify"
               className="inline-flex items-center justify-center rounded-full bg-coral px-8 py-3.5 text-base font-semibold text-white hover:bg-coral-hover transition-all"
             >
-              Become a Verified Source
+              Get Verified - $20/year
             </Link>
             <Link
               href="/leaderboard"
               className="inline-flex items-center justify-center rounded-full border-2 border-cream px-8 py-3.5 text-base font-semibold text-cream hover:bg-cream hover:text-green-deep transition-all"
             >
-              View the Leaderboard
+              View Leaderboard
+            </Link>
+            <Link
+              href="/become-a-source"
+              className="inline-flex items-center justify-center rounded-full border-2 border-cream/50 px-8 py-3.5 text-base font-semibold text-cream/80 hover:bg-cream hover:text-green-deep transition-all"
+            >
+              For Clubs
             </Link>
           </div>
         </div>

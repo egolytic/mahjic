@@ -110,6 +110,28 @@ export default async function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
+        {/* Verification CTA Banner for Provisional Players */}
+        {playerData.tier === "provisional" && (
+          <div className="mb-6 rounded-2xl border-2 border-gold bg-gradient-to-r from-gold/10 to-coral/10 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-lg font-bold text-text">
+                  Get Verified to Appear on Leaderboards
+                </h2>
+                <p className="mt-1 text-sm text-text-light">
+                  Verify your identity with government ID. $20/year. Takes 2 minutes.
+                </p>
+              </div>
+              <Link
+                href="/verify"
+                className="inline-flex items-center justify-center rounded-full bg-coral px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-coral-hover whitespace-nowrap"
+              >
+                Get Verified Now
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Profile Section */}
         <div className="mb-8 rounded-2xl border border-green/10 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">

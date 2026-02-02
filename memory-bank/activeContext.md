@@ -2,23 +2,41 @@
 
 ## Current State
 
-**Phase:** MVP Complete, Verification Subscription Live
+**Phase:** MVP Complete, Verification Subscription Live, UX Improved
 
 The Mahjic rating system is fully built and deployed with payment-first verification flow.
 
-## What Was Just Done (Feb 1, 2026)
+## What Was Just Done (Feb 2, 2026)
+
+### Verification UX Improvements
+1. **Homepage CTAs** - Added prominent "Get Verified - $20/year" buttons:
+   - Hero section: Primary CTA now for player verification
+   - Player Tiers section: Direct "Get Verified" button on Verified card
+   - Final CTA: Three buttons - Get Verified, Leaderboard, For Clubs
+2. **Dashboard Banner** - Added gold/coral gradient verification CTA for provisional players
+3. **New User Flow** - Users can now verify WITHOUT playing first:
+   - Previously: Had to play → get profile → then verify (chicken-and-egg problem)
+   - Now: Can verify first → profile created automatically → play tournaments
+   - Profile created with 1500 starting rating during checkout
+4. **BAM Integration Plan** - Added account linking flow documentation
+
+### Verification Flow (Updated)
+- **New users**: Sign up → Pay $20 → Profile created automatically → Verify ID → Ready to play
+- **Existing players**: Play → Claim profile → Pay $20 → Verify ID → Appear on leaderboards
+
+## What Was Done (Feb 1, 2026)
 
 ### Verification Subscription Feature
 1. **Payment-first flow** - User pays $20 before identity verification
 2. **Attempt tracking** - 5 Stripe Identity attempts included
 3. **New API endpoints**:
-   - `POST /api/verify/checkout` - Stripe Checkout for $20 payment
+   - `POST /api/verify/checkout` - Stripe Checkout for $20 payment (now creates player if needed)
    - `POST /api/verify/start-identity` - Stripe Identity (requires payment)
 4. **Database columns** added to `players`:
    - `verification_status` (none | paid | verified)
    - `verification_paid_at`, `verification_attempts`, `verification_checkout_session_id`
 5. **Multi-state UI** on `/verify` page:
-   - Not paid → Payment button + warning about $2/attempt cost
+   - Not paid → Payment button + info for new users
    - Paid → Identity verification button + attempts remaining
    - Exhausted → Manual verification instructions
    - Verified → Success confirmation

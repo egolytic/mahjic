@@ -401,6 +401,128 @@ console.log('Rating changes:', result.results);
 
 ---
 
+## Player Verification & Account Linking
+
+### Overview
+
+Players can get verified on Mahjic ($20/year) to appear on leaderboards. This section covers how BAM users link their accounts.
+
+### Verification Flow for BAM Users
+
+**Scenario A: Existing BAM user wants to verify**
+1. User plays on BAM → BAM submits results → Mahjic creates provisional profile
+2. User goes to mahjic.org/verify → logs in with same email
+3. Mahjic auto-links based on email match
+4. User pays $20 → completes ID verification → now Verified
+
+**Scenario B: New user verifies first (tournament requirement)**
+1. User goes to mahjic.org/verify → creates account → pays $20
+2. Mahjic creates player profile with 1500 starting rating
+3. User completes ID verification → now Verified
+4. User plays on BAM → BAM submits with same email → profiles merge
+
+### Adding "Link to Mahjic" in BAM
+
+Add a button in BAM user settings to link/verify their Mahjic account:
+
+```typescript
+// src/components/mahjic-link-button.tsx
+"use client";
+
+interface MahjicLinkButtonProps {
+  userEmail: string;
+  mahjicId?: string;
+  mahjicVerified?: boolean;
+}
+
+export function MahjicLinkButton({
+  userEmail,
+  mahjicId,
+  mahjicVerified
+}: MahjicLinkButtonProps) {
+  if (mahjicVerified) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-green-600">
+        <CheckIcon className="h-4 w-4" />
+        Mahjic Verified
+        <a
+          href={`https://mahjic.org/players/${mahjicId}`}
+          target="_blank"
+          className="underline"
+        >
+          View Profile
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={`https://mahjic.org/verify?email=${encodeURIComponent(userEmail)}`}
+      target="_blank"
+      className="btn btn-outline"
+    >
+      {mahjicId ? "Complete Mahjic Verification" : "Get Mahjic Verified"}
+    </a>
+  );
+}
+```
+
+### Database Fields for BAM
+
+```sql
+-- Add to users or player_profiles table
+ALTER TABLE users ADD COLUMN mahjic_player_id UUID;
+ALTER TABLE users ADD COLUMN mahjic_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN mahjic_rating INTEGER;
+```
+
+### Syncing Verification Status
+
+After BAM submits a session, Mahjic returns player info including verification status:
+
+```typescript
+interface MahjicPlayerResult {
+  mahjic_id: string;
+  email: string;
+  is_new_player: boolean;
+  tier: 'provisional' | 'verified';  // Add this to API response
+  rating_before: number;
+  rating_after: number;
+  // ...
+}
+
+// After successful submission, update BAM user records
+for (const result of mahjicResult.results) {
+  await supabase
+    .from('users')
+    .update({
+      mahjic_player_id: result.mahjic_id,
+      mahjic_verified: result.tier === 'verified',
+      mahjic_rating: result.rating_after,
+    })
+    .eq('email', result.email);
+}
+```
+
+### Webhook for Verification Events (Future)
+
+Mahjic could send webhooks when users verify:
+
+```typescript
+// POST to BAM's webhook endpoint
+{
+  "event": "player.verified",
+  "player_id": "uuid",
+  "email": "user@example.com",
+  "verified_at": "2026-02-02T..."
+}
+```
+
+This lets BAM update verification status in real-time without polling.
+
+---
+
 ## Questions to Resolve
 
 1. **Should lessons be submitted to Mahjic?**
@@ -414,6 +536,9 @@ console.log('Rating changes:', result.results);
 
 4. **Retry strategy for failed submissions?**
    - Recommendation: Queue with exponential backoff
+
+5. **Should Mahjic send verification webhooks to BAM?**
+   - Recommendation: Yes, add to Phase 4
 
 ---
 

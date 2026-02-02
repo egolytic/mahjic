@@ -49,17 +49,26 @@ docs/plans/               # Integration plans
 - **Two Ratings:** Mahjic Rating (all games) + Verified Rating (vs verified only)
 
 ### Verification Flow (Payment First)
+
+**New Users (no player profile yet):**
 ```
-Pay $20 → verification_status = "paid"
+Sign up → Pay $20 → Player profile auto-created (1500 rating)
     ↓
-Start Identity (up to 5 attempts) → increments verification_attempts
+Start Identity → Pass → verification_status = "verified", tier = "verified"
     ↓
-Pass ID check → verification_status = "verified", tier = "verified"
-    ↓
-Fail 5 times → Manual process (email support@mahjic.org + $10 fee)
+Ready to play in tournaments requiring verification
 ```
 
-**Policy:** Each failed attempt costs ~$2 (Stripe Identity fee). No refunds for ragequits.
+**Existing Players:**
+```
+Play at club → Claim profile → Pay $20 → Start Identity → Verified
+```
+
+**Attempts & Policy:**
+- 5 identity attempts included
+- Each failed attempt costs ~$2 (Stripe Identity fee)
+- No refunds for ragequits
+- Fail 5 times → Manual process (email support@mahjic.org + $10 fee)
 
 ### API Endpoints
 ```
