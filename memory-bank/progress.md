@@ -89,6 +89,15 @@
 - [x] Added RESEND_API_KEY and RESEND_FROM_EMAIL to Vercel production
 - [x] Redeployed to production with clean env vars
 
+### Verification Flow Bug Fixes (Feb 2, 2026) ✅
+
+- [x] Fixed player profile creation error (removed non-existent `mahjongs`/`wall_games` columns)
+- [x] Fixed duplicate player creation on retry (use admin client to check existing player)
+- [x] Fixed NEXT_PUBLIC_APP_URL in production (was localhost, now https://mahjic.org)
+- [x] Fixed RLS policy on players table (was checking wrong column for user ownership)
+- [x] Updated validate-env.sh to catch localhost in production
+- [x] Full verification flow tested end-to-end: signup → pay → email received → identity verification ready
+
 ## In Progress
 
 ### BAM Good Time Integration
@@ -145,3 +154,11 @@
 - Trailing newlines cause runtime errors (env vars don't match expected values)
 - Use `printf '%s' "$value" | vercel env add` to avoid trailing newlines
 - Always validate env vars after upload with `./scripts/validate-env.sh`
+- **CRITICAL:** NEXT_PUBLIC_APP_URL must be `https://mahjic.org` in production, not localhost
+- Stripe checkout redirect URLs use this var - wrong value = silent redirect failures
+
+### Supabase RLS Policies
+- RLS policies must match the column being queried (auth_user_id, not id)
+- When users can't see their own data, check RLS first
+- Admin client bypasses RLS - useful for debugging
+- Policy `auth.uid() = auth_user_id` lets users read their own player profile

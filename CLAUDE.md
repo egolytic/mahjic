@@ -182,7 +182,15 @@ vercel --prod         # Deploy to production
 | Script | Purpose |
 |--------|---------|
 | `sync-env.sh` | Uses `printf` to upload env vars without trailing newlines |
-| `validate-env.sh` | Checks for whitespace issues and validates required vars are present |
+| `validate-env.sh` | Checks for whitespace issues, validates required vars, and ensures production doesn't use localhost |
+
+### Critical Env Var: NEXT_PUBLIC_APP_URL
+
+**MUST be different for local vs production:**
+- **Local (.env.local):** `http://localhost:3000`
+- **Production (Vercel):** `https://mahjic.org`
+
+If production uses localhost, Stripe checkout redirects will fail silently. The validate script now catches this.
 
 ---
 

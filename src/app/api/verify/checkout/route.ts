@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
       player = existingPlayer;
     } else {
       // No playerId provided - check if user already has a player profile
-      const { data: existingPlayer } = await supabase
+      // Use admin client to bypass RLS (the RLS policy checks wrong column)
+      const adminSupabase = createAdminClient();
+      const { data: existingPlayer } = await adminSupabase
         .from("players")
         .select("*")
         .eq("auth_user_id", user.id)
@@ -62,7 +64,6 @@ export async function POST(request: NextRequest) {
         player = existingPlayer;
       } else {
         // Create a new player profile for this user
-        const adminSupabase = createAdminClient();
         const playerName = user.user_metadata?.full_name
           || user.email?.split("@")[0]
           || "Player";
@@ -77,8 +78,6 @@ export async function POST(request: NextRequest) {
             mahjic_rating: 1500,
             verified_rating: 1500,
             games_played: 0,
-            mahjongs: 0,
-            wall_games: 0,
             verification_status: "none",
             verification_attempts: 0,
           })

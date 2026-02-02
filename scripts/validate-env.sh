@@ -58,6 +58,12 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
   elif [[ "$key" == "NEXT_PUBLIC_SUPABASE_URL" ]] && [[ ! "$clean_value" =~ ^https:// ]]; then
     echo "!  $key - expected to start with 'https://'"
     ISSUES=$((ISSUES + 1))
+  elif [[ "$key" == "NEXT_PUBLIC_APP_URL" ]] && [[ "$ENVIRONMENT" == "production" ]] && [[ "$clean_value" == *"localhost"* ]]; then
+    echo "X $key - production should NOT use localhost (got: $clean_value)"
+    ISSUES=$((ISSUES + 1))
+  elif [[ "$key" == "NEXT_PUBLIC_APP_URL" ]] && [[ "$ENVIRONMENT" == "production" ]] && [[ ! "$clean_value" =~ ^https:// ]]; then
+    echo "!  $key - production should use https:// (got: $clean_value)"
+    ISSUES=$((ISSUES + 1))
   fi
 done < "$TEMP_FILE"
 

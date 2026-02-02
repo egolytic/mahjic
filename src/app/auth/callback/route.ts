@@ -14,14 +14,28 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (error) {
+      console.error("Auth callback error:", {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        name: error.name,
+      });
+      // Include error details in redirect for debugging
+      return NextResponse.redirect(
+        `${origin}/login?error=auth_callback_error&details=${encodeURIComponent(error.message)}`
+      );
+    }
+
+    if (data?.session) {
       // Successfully authenticated - redirect to intended destination
       return NextResponse.redirect(`${origin}${redirect}`);
     }
   }
 
-  // If there's no code or an error occurred, redirect to login with error
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
+  // If there's no code, redirect to login with error
+  console.error("Auth callback: No code provided");
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_error&details=no_code`);
 }

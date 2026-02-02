@@ -11,9 +11,10 @@ export function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const detailsParam = searchParams.get("details");
   const [error, setError] = useState<string | null>(
     errorParam === "auth_callback_error"
-      ? "Authentication failed. Please try again."
+      ? `Authentication failed: ${detailsParam || "Please try again."}`
       : errorParam === "email_confirmation_error"
         ? "Email confirmation failed. Please try again."
         : null
