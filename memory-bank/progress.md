@@ -72,6 +72,15 @@
 - [x] Update BAM integration plan with account linking flow
 - [x] Deploy to production
 
+### Email Service (Feb 2, 2026) ✅
+
+- [x] Add Resend for transactional emails
+- [x] Create verification welcome email with invoice details
+- [x] Integrate with Stripe webhook (checkout.session.completed)
+- [x] Use BAM Good Time branding (green-deep, coral, cream)
+- [x] Send from hello@mail.bamgoodtime.com domain
+- [x] Include invoice details for trademark filing evidence
+
 ## In Progress
 
 ### BAM Good Time Integration

@@ -37,6 +37,7 @@ src/app/api/v1/           # REST API endpoints
 src/app/api/verify/       # Verification endpoints (checkout, start-identity)
 src/lib/elo.ts            # Rating algorithm
 src/lib/stripe.ts         # Stripe Identity + Checkout
+src/lib/email.ts          # Resend transactional emails
 src/lib/supabase/         # Database clients
 supabase/migrations/      # Database schema
 docs/plans/               # Integration plans
@@ -109,6 +110,7 @@ sum(all mahjongs) + wall_games = games_played
 | Hosting | Vercel | ✅ mahjic.org |
 | Identity | Stripe Identity | ✅ |
 | Auth | Supabase Auth | ✅ magic links |
+| Email | Resend | ✅ transactional |
 
 ---
 
@@ -139,6 +141,10 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Resend (email)
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=hello@mail.bamgoodtime.com
 
 # App
 NEXT_PUBLIC_APP_URL=https://mahjic.org
@@ -178,3 +184,27 @@ additional_redirect_urls = ["https://mahjic.org", "https://mahjic.org/**", "http
 ```
 
 After changing, push with: `supabase config push --project-ref nevmbqdvivaqwvuzfrrn`
+
+---
+
+## EMAIL SERVICE
+
+**Provider:** Resend (resend.com)
+**Domain:** mail.bamgoodtime.com (uses BAM Good Time domain for unified branding)
+**From:** `Mahjic by Bam Good Time <hello@mail.bamgoodtime.com>`
+
+### Implementation
+- `src/lib/email.ts` - Resend client and email templates
+- Uses BAM Good Time brand colors (green-deep #4a8f53, coral #fd5d9d, cream #fdfaf6)
+- Triggered from Stripe webhook on successful payment
+
+### Current Emails
+| Email | Trigger | Purpose |
+|-------|---------|---------|
+| Verification Welcome | `checkout.session.completed` | Welcome + invoice for trademark evidence |
+
+### Environment Variables
+```bash
+RESEND_API_KEY=re_...                          # Resend API key
+RESEND_FROM_EMAIL=hello@mail.bamgoodtime.com   # Sender address
+```

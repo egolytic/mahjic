@@ -1,4 +1,5 @@
 import { stripe } from "@/lib/stripe";
+import { sendVerificationWelcomeEmail } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -126,6 +127,35 @@ export async function POST(request: NextRequest) {
             .from("players")
             .update(updateData)
             .eq("id", playerId);
+
+          // Send welcome/invoice email
+          if (session.customer_email) {
+            const transactionDate = new Date();
+            const expiresDate = new Date();
+            expiresDate.setFullYear(expiresDate.getFullYear() + 1);
+
+            // Get player name for the email
+            const { data: player } = await supabase
+              .from("players")
+              .select("display_name")
+              .eq("id", playerId)
+              .single();
+
+            const customerName = player?.display_name || "Mahjic Player";
+
+            try {
+              await sendVerificationWelcomeEmail({
+                to: session.customer_email,
+                customerName,
+                transactionId: session.id,
+                transactionDate,
+                expiresDate,
+              });
+            } catch (emailError) {
+              // Log but don't fail the webhook - payment was successful
+              console.error("Failed to send welcome email:", emailError);
+            }
+          }
         }
 
         break;
