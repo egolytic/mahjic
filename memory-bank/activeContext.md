@@ -102,6 +102,11 @@ All configured:
 
 ## Open Tasks
 
-1. **Supabase Auth** - Add redirect URL for production login
-2. **BAM Integration** - Implement client library
-3. **Email Templates** - Configure Supabase Auth emails
+1. **BAM Integration** - Implement client library
+2. **Email Templates** - Configure Supabase Auth emails
+
+## Recently Fixed
+
+- **Supabase Auth redirect** - Fixed config to redirect to mahjic.org instead of localhost
+  - Updated `supabase/config.toml` with `site_url = "https://mahjic.org"`
+  - Pushed config with `supabase config push`

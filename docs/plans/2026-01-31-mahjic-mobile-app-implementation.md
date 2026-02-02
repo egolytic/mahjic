@@ -2,7 +2,12 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build a native mobile app for recording Mahjong games with QR-based table linking, real-time scoring, and push notification confirmations.
+**Goal:** Build a native mobile app for Mahjong players with:
+- **Club integration** - Find your clubs, browse events, register, view schedule (via Bam Good Time)
+- **Game recording** - QR-based table linking, real-time scoring, push notification confirmations
+- **Rating tracking** - Synced with mahjic.org
+
+**Auth:** Users log in with their Bam Good Time account. Must be a member of at least one club. If no clubs, prompt to ask organizer about bamgoodtime.com.
 
 **Architecture:** Expo (React Native) app as thin client. All ELO calculation and player data lives on existing mahjic.org API. Real-time sync via Supabase Realtime. Offline-first with local storage.
 
@@ -657,9 +662,1666 @@ git commit -m "feat: add deep link handling for auth callback"
 
 ---
 
-## Phase 2: Table Linking (QR Code)
+## Phase 2: Clubs & Events (Bam Good Time Integration)
 
-### Task 5: Table Store & API Types
+### Task 5: Club Store & Bam Good Time API
+
+**Files:**
+- Create: `lib/bamApi.ts`
+- Create: `stores/clubStore.ts`
+- Modify: `lib/types.ts`
+
+**Step 1: Create Bam Good Time API client**
+
+Create `lib/bamApi.ts`:
+
+```tsx
+import { supabase } from './supabase';
+
+const BAM_API_BASE = 'https://bamgoodtime.com/api';
+
+export interface Club {
+  id: string;
+  slug: string;
+  name: string;
+  branding?: {
+    logo_url?: string;
+    primary_color?: string;
+    tagline?: string;
+  };
+}
+
+export interface ClubMembership {
+  orgId: string;
+  orgSlug: string;
+  orgName: string;
+  role: 'player' | 'helper' | 'admin';
+  logoUrl?: string;
+}
+
+export interface Event {
+  id: string;
+  orgId: string;
+  title: string;
+  description?: string;
+  type: 'lesson' | 'open_play' | 'league' | 'event';
+  date: string;
+  startTime: string;
+  endTime?: string;
+  location?: string;
+  capacity?: number;
+  registeredCount: number;
+  priceCents: number;
+  paymentMode: 'free' | 'honor' | 'formal';
+  status: 'draft' | 'published' | 'cancelled' | 'completed';
+  isRegistered: boolean;
+  isWaitlisted: boolean;
+}
+
+export interface Registration {
+  id: string;
+  eventId: string;
+  status: 'registered' | 'waitlist' | 'cancelled' | 'attended';
+  paymentStatus?: 'pending' | 'paid' | 'refunded';
+  createdAt: string;
+}
+
+// Fetch all clubs the current user is a member of
+export async function fetchUserClubs(): Promise<ClubMembership[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Query users table grouped by org to find all memberships
+  const { data: memberships, error } = await supabase
+    .from('users')
+    .select(`
+      org_id,
+      role,
+      organizations!inner (
+        id,
+        slug,
+        name,
+        branding
+      )
+    `)
+    .eq('id', user.id);
+
+  if (error || !memberships) return [];
+
+  return memberships.map((m: any) => ({
+    orgId: m.org_id,
+    orgSlug: m.organizations.slug,
+    orgName: m.organizations.name,
+    role: m.role,
+    logoUrl: m.organizations.branding?.logo_url,
+  }));
+}
+
+// Fetch upcoming events for a club
+export async function fetchClubEvents(orgId: string): Promise<Event[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: events, error } = await supabase
+    .from('events')
+    .select(`
+      id,
+      org_id,
+      title,
+      description,
+      type,
+      date,
+      start_time,
+      end_time,
+      location,
+      capacity,
+      price_cents,
+      payment_mode,
+      status,
+      registrations!left (
+        id,
+        user_id,
+        status
+      )
+    `)
+    .eq('org_id', orgId)
+    .eq('status', 'published')
+    .gte('date', today)
+    .order('date', { ascending: true })
+    .order('start_time', { ascending: true })
+    .limit(20);
+
+  if (error || !events) return [];
+
+  return events.map((e: any) => {
+    const myReg = e.registrations?.find((r: any) => r.user_id === user?.id);
+    const activeRegs = e.registrations?.filter((r: any) =>
+      r.status === 'registered' || r.status === 'waitlist'
+    ) || [];
+
+    return {
+      id: e.id,
+      orgId: e.org_id,
+      title: e.title,
+      description: e.description,
+      type: e.type,
+      date: e.date,
+      startTime: e.start_time,
+      endTime: e.end_time,
+      location: e.location,
+      capacity: e.capacity,
+      registeredCount: activeRegs.filter((r: any) => r.status === 'registered').length,
+      priceCents: e.price_cents || 0,
+      paymentMode: e.payment_mode || 'free',
+      status: e.status,
+      isRegistered: myReg?.status === 'registered',
+      isWaitlisted: myReg?.status === 'waitlist',
+    };
+  });
+}
+
+// Fetch user's upcoming registrations across all clubs
+export async function fetchMySchedule(): Promise<(Event & { clubName: string })[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: registrations, error } = await supabase
+    .from('registrations')
+    .select(`
+      id,
+      status,
+      events!inner (
+        id,
+        org_id,
+        title,
+        date,
+        start_time,
+        end_time,
+        location,
+        type,
+        organizations!inner (
+          name
+        )
+      )
+    `)
+    .eq('user_id', user.id)
+    .in('status', ['registered', 'waitlist'])
+    .gte('events.date', today)
+    .order('events(date)', { ascending: true })
+    .limit(20);
+
+  if (error || !registrations) return [];
+
+  return registrations.map((r: any) => ({
+    id: r.events.id,
+    orgId: r.events.org_id,
+    title: r.events.title,
+    date: r.events.date,
+    startTime: r.events.start_time,
+    endTime: r.events.end_time,
+    location: r.events.location,
+    type: r.events.type,
+    clubName: r.events.organizations.name,
+    isRegistered: r.status === 'registered',
+    isWaitlisted: r.status === 'waitlist',
+    // Minimal fields for schedule view
+    description: undefined,
+    capacity: undefined,
+    registeredCount: 0,
+    priceCents: 0,
+    paymentMode: 'free' as const,
+    status: 'published' as const,
+  }));
+}
+
+// Register for an event (calls Bam Good Time API for atomic registration)
+export async function registerForEvent(
+  eventId: string,
+  orgSlug: string
+): Promise<{ success: boolean; waitlisted?: boolean; error?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { success: false, error: 'Not authenticated' };
+
+  try {
+    const response = await fetch(
+      `https://${orgSlug}.bamgoodtime.com/api/events/${eventId}/register`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({}),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      return { success: false, error: err.error || 'Registration failed' };
+    }
+
+    const data = await response.json();
+    return { success: true, waitlisted: data.waitlisted };
+  } catch (error) {
+    return { success: false, error: 'Network error' };
+  }
+}
+```
+
+**Step 2: Create club store**
+
+Create `stores/clubStore.ts`:
+
+```tsx
+import { create } from 'zustand';
+import {
+  ClubMembership,
+  Event,
+  fetchUserClubs,
+  fetchClubEvents,
+  fetchMySchedule,
+  registerForEvent,
+} from '../lib/bamApi';
+
+interface ClubState {
+  clubs: ClubMembership[];
+  selectedClub: ClubMembership | null;
+  events: Event[];
+  schedule: (Event & { clubName: string })[];
+  loading: boolean;
+  error: string | null;
+
+  // Actions
+  loadClubs: () => Promise<void>;
+  selectClub: (club: ClubMembership) => void;
+  loadEvents: () => Promise<void>;
+  loadSchedule: () => Promise<void>;
+  register: (eventId: string) => Promise<{ success: boolean; waitlisted?: boolean; error?: string }>;
+}
+
+export const useClubStore = create<ClubState>((set, get) => ({
+  clubs: [],
+  selectedClub: null,
+  events: [],
+  schedule: [],
+  loading: false,
+  error: null,
+
+  loadClubs: async () => {
+    set({ loading: true, error: null });
+    const clubs = await fetchUserClubs();
+    set({
+      clubs,
+      loading: false,
+      selectedClub: clubs.length > 0 ? clubs[0] : null,
+    });
+
+    // Auto-load events if we have a club
+    if (clubs.length > 0) {
+      get().loadEvents();
+    }
+  },
+
+  selectClub: (club: ClubMembership) => {
+    set({ selectedClub: club, events: [] });
+    get().loadEvents();
+  },
+
+  loadEvents: async () => {
+    const { selectedClub } = get();
+    if (!selectedClub) return;
+
+    set({ loading: true });
+    const events = await fetchClubEvents(selectedClub.orgId);
+    set({ events, loading: false });
+  },
+
+  loadSchedule: async () => {
+    set({ loading: true });
+    const schedule = await fetchMySchedule();
+    set({ schedule, loading: false });
+  },
+
+  register: async (eventId: string) => {
+    const { selectedClub } = get();
+    if (!selectedClub) return { success: false, error: 'No club selected' };
+
+    const result = await registerForEvent(eventId, selectedClub.orgSlug);
+
+    if (result.success) {
+      // Refresh events to update registration status
+      get().loadEvents();
+      get().loadSchedule();
+    }
+
+    return result;
+  },
+}));
+```
+
+**Step 3: Commit**
+
+```bash
+git add lib/bamApi.ts stores/clubStore.ts
+git commit -m "feat: add Bam Good Time API client and club store"
+```
+
+---
+
+### Task 6: Home Screen with Club Integration
+
+**Files:**
+- Modify: `app/home.tsx`
+- Create: `components/ClubCard.tsx`
+- Create: `components/NoClubPrompt.tsx`
+
+**Step 1: Create NoClubPrompt component**
+
+Create `components/NoClubPrompt.tsx`:
+
+```tsx
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+
+export function NoClubPrompt() {
+  const handleLearnMore = () => {
+    Linking.openURL('https://bamgoodtime.com');
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.icon}>🀄</Text>
+      <Text style={styles.title}>Join a Club</Text>
+      <Text style={styles.description}>
+        Ask your Mahjong organizer to set up their club on Bam Good Time to find games, register for events, and track your rating.
+      </Text>
+      <TouchableOpacity style={styles.button} onPress={handleLearnMore}>
+        <Text style={styles.buttonText}>Learn More</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  icon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#E8F0ED',
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#1B4D3E',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+```
+
+**Step 2: Create ClubCard component**
+
+Create `components/ClubCard.tsx`:
+
+```tsx
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { ClubMembership } from '../lib/bamApi';
+
+interface ClubCardProps {
+  club: ClubMembership;
+  isSelected: boolean;
+  onPress: () => void;
+}
+
+export function ClubCard({ club, isSelected, onPress }: ClubCardProps) {
+  return (
+    <TouchableOpacity
+      style={[styles.card, isSelected && styles.cardSelected]}
+      onPress={onPress}
+    >
+      {club.logoUrl ? (
+        <Image source={{ uri: club.logoUrl }} style={styles.logo} />
+      ) : (
+        <View style={styles.logoPlaceholder}>
+          <Text style={styles.logoText}>{club.orgName.charAt(0)}</Text>
+        </View>
+      )}
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{club.orgName}</Text>
+        <Text style={styles.role}>{club.role}</Text>
+      </View>
+      {isSelected && <Text style={styles.checkmark}>✓</Text>}
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  cardSelected: {
+    borderColor: '#1B4D3E',
+    backgroundColor: '#F8FBF9',
+  },
+  logo: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  logoPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E8F0ED',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+  },
+  info: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  role: {
+    fontSize: 12,
+    color: '#666',
+    textTransform: 'capitalize',
+  },
+  checkmark: {
+    fontSize: 18,
+    color: '#1B4D3E',
+    fontWeight: 'bold',
+  },
+});
+```
+
+**Step 3: Update home screen**
+
+Modify `app/home.tsx`:
+
+```tsx
+import { useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '../stores/authStore';
+import { useClubStore } from '../stores/clubStore';
+import { ClubCard } from '../components/ClubCard';
+import { NoClubPrompt } from '../components/NoClubPrompt';
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const { signOut, playerProfile } = useAuthStore();
+  const { clubs, selectedClub, loading, loadClubs, selectClub, schedule, loadSchedule } = useClubStore();
+
+  useEffect(() => {
+    loadClubs();
+    loadSchedule();
+  }, []);
+
+  const rating = playerProfile?.rating ?? 1200;
+  const hasClubs = clubs.length > 0;
+  const upcomingEvent = schedule[0];
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={() => { loadClubs(); loadSchedule(); }} />
+      }
+    >
+      {/* Rating Display */}
+      <View style={styles.ratingSection}>
+        <Text style={styles.rating}>{Math.round(rating)}</Text>
+        <Text style={styles.label}>Your Rating</Text>
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push('/table/start')}
+        >
+          <Text style={styles.primaryButtonText}>START TABLE</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => router.push('/table/join')}
+        >
+          <Text style={styles.secondaryButtonText}>JOIN TABLE</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Club Section */}
+      {hasClubs ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Your Clubs</Text>
+            <TouchableOpacity onPress={() => router.push('/clubs')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {clubs.slice(0, 2).map((club) => (
+            <ClubCard
+              key={club.orgId}
+              club={club}
+              isSelected={selectedClub?.orgId === club.orgId}
+              onPress={() => selectClub(club)}
+            />
+          ))}
+
+          {/* Next Event Preview */}
+          {upcomingEvent && (
+            <TouchableOpacity
+              style={styles.nextEvent}
+              onPress={() => router.push('/schedule')}
+            >
+              <Text style={styles.nextEventLabel}>NEXT UP</Text>
+              <Text style={styles.nextEventTitle}>{upcomingEvent.title}</Text>
+              <Text style={styles.nextEventDate}>
+                {new Date(upcomingEvent.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })} • {upcomingEvent.startTime}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Events Link */}
+          <TouchableOpacity
+            style={styles.eventsLink}
+            onPress={() => router.push('/events')}
+          >
+            <Text style={styles.eventsLinkText}>Browse Events →</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <NoClubPrompt />
+      )}
+
+      {/* Sign Out */}
+      <TouchableOpacity onPress={signOut} style={styles.signOut}>
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FDF8F3',
+  },
+  content: {
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  ratingSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  rating: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+  },
+  label: {
+    fontSize: 16,
+    color: '#666',
+  },
+  actions: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  primaryButton: {
+    height: 56,
+    backgroundColor: '#1B4D3E',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  primaryButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    height: 56,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#1B4D3E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: '#1B4D3E',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  section: {
+    paddingHorizontal: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+  },
+  seeAll: {
+    fontSize: 14,
+    color: '#E07A5F',
+    fontWeight: '600',
+  },
+  nextEvent: {
+    backgroundColor: '#1B4D3E',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+  },
+  nextEventLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  nextEventTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  nextEventDate: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  eventsLink: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  eventsLinkText: {
+    fontSize: 16,
+    color: '#1B4D3E',
+    fontWeight: '600',
+  },
+  signOut: {
+    marginTop: 32,
+    alignItems: 'center',
+  },
+  signOutText: {
+    color: '#999',
+    fontSize: 14,
+  },
+});
+```
+
+**Step 4: Commit**
+
+```bash
+git add .
+git commit -m "feat: add club integration to home screen with no-club prompt"
+```
+
+---
+
+### Task 7: Events List Screen
+
+**Files:**
+- Create: `app/events.tsx`
+- Create: `components/EventCard.tsx`
+
+**Step 1: Create EventCard component**
+
+Create `components/EventCard.tsx`:
+
+```tsx
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Event } from '../lib/bamApi';
+
+interface EventCardProps {
+  event: Event;
+  onPress: () => void;
+}
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  lesson: 'Lesson',
+  open_play: 'Open Play',
+  league: 'League',
+  event: 'Event',
+};
+
+export function EventCard({ event, onPress }: EventCardProps) {
+  const dateObj = new Date(event.date);
+  const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+  const dayNum = dateObj.getDate();
+  const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
+
+  const spotsLeft = event.capacity ? event.capacity - event.registeredCount : null;
+  const isFull = spotsLeft !== null && spotsLeft <= 0;
+  const price = event.priceCents > 0 ? `$${(event.priceCents / 100).toFixed(0)}` : 'Free';
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+      <View style={styles.dateBox}>
+        <Text style={styles.dayName}>{dayName}</Text>
+        <Text style={styles.dayNum}>{dayNum}</Text>
+        <Text style={styles.month}>{month}</Text>
+      </View>
+
+      <View style={styles.info}>
+        <View style={styles.typeRow}>
+          <Text style={styles.type}>{EVENT_TYPE_LABELS[event.type] || event.type}</Text>
+          {event.isRegistered && <Text style={styles.badge}>Registered</Text>}
+          {event.isWaitlisted && <Text style={[styles.badge, styles.badgeWaitlist]}>Waitlist</Text>}
+        </View>
+        <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
+        <Text style={styles.time}>{event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}</Text>
+        {event.location && (
+          <Text style={styles.location} numberOfLines={1}>{event.location}</Text>
+        )}
+      </View>
+
+      <View style={styles.meta}>
+        <Text style={styles.price}>{price}</Text>
+        {spotsLeft !== null && (
+          <Text style={[styles.spots, isFull && styles.spotsFull]}>
+            {isFull ? 'Full' : `${spotsLeft} left`}
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  dateBox: {
+    width: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FBF9',
+    borderRadius: 8,
+    padding: 8,
+  },
+  dayName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#666',
+    textTransform: 'uppercase',
+  },
+  dayNum: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+  },
+  month: {
+    fontSize: 11,
+    color: '#666',
+    textTransform: 'uppercase',
+  },
+  info: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  type: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#E07A5F',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  badge: {
+    marginLeft: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: '#1B4D3E',
+    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFF',
+    overflow: 'hidden',
+  },
+  badgeWaitlist: {
+    backgroundColor: '#F59E0B',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  time: {
+    fontSize: 13,
+    color: '#666',
+  },
+  location: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  meta: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1B4D3E',
+  },
+  spots: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
+  spotsFull: {
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+});
+```
+
+**Step 2: Create events list screen**
+
+Create `app/events.tsx`:
+
+```tsx
+import { useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useClubStore } from '../stores/clubStore';
+import { EventCard } from '../components/EventCard';
+import { ClubCard } from '../components/ClubCard';
+
+export default function EventsScreen() {
+  const router = useRouter();
+  const { clubs, selectedClub, events, loading, selectClub, loadEvents } = useClubStore();
+
+  useEffect(() => {
+    if (selectedClub) {
+      loadEvents();
+    }
+  }, [selectedClub]);
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => router.back()}>
+        <Text style={styles.backButton}>← Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.title}>Events</Text>
+      <View style={{ width: 60 }} />
+    </View>
+  );
+
+  const renderClubSelector = () => (
+    <View style={styles.clubSelector}>
+      {clubs.map((club) => (
+        <TouchableOpacity
+          key={club.orgId}
+          style={[
+            styles.clubTab,
+            selectedClub?.orgId === club.orgId && styles.clubTabActive,
+          ]}
+          onPress={() => selectClub(club)}
+        >
+          <Text
+            style={[
+              styles.clubTabText,
+              selectedClub?.orgId === club.orgId && styles.clubTabTextActive,
+            ]}
+            numberOfLines={1}
+          >
+            {club.orgName}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.empty}>
+      <Text style={styles.emptyText}>No upcoming events</Text>
+      <Text style={styles.emptySubtext}>Check back later for new events</Text>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      {renderHeader()}
+      {clubs.length > 1 && renderClubSelector()}
+
+      <FlatList
+        data={events}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <EventCard
+            event={item}
+            onPress={() => router.push(`/event/${item.id}`)}
+          />
+        )}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={renderEmpty}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={loadEvents} />
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FDF8F3',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 16,
+  },
+  backButton: {
+    fontSize: 16,
+    color: '#1B4D3E',
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+  },
+  clubSelector: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    gap: 8,
+  },
+  clubTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#DDD',
+  },
+  clubTabActive: {
+    backgroundColor: '#1B4D3E',
+    borderColor: '#1B4D3E',
+  },
+  clubTabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  clubTabTextActive: {
+    color: '#FFF',
+  },
+  list: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 4,
+  },
+});
+```
+
+**Step 3: Commit**
+
+```bash
+git add .
+git commit -m "feat: add events list screen with club filtering"
+```
+
+---
+
+### Task 8: Event Detail & Registration Screen
+
+**Files:**
+- Create: `app/event/[id].tsx`
+
+**Step 1: Create event detail screen**
+
+Create `app/event/[id].tsx`:
+
+```tsx
+import { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useClubStore } from '../../stores/clubStore';
+import { Event } from '../../lib/bamApi';
+
+export default function EventDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { events, selectedClub, register } = useClubStore();
+  const [registering, setRegistering] = useState(false);
+
+  const event = events.find((e) => e.id === id);
+
+  if (!event) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.backButton}>← Back</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loading}>
+          <Text style={styles.loadingText}>Event not found</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const dateObj = new Date(event.date);
+  const formattedDate = dateObj.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const price = event.priceCents > 0 ? `$${(event.priceCents / 100).toFixed(2)}` : 'Free';
+  const spotsLeft = event.capacity ? event.capacity - event.registeredCount : null;
+  const isFull = spotsLeft !== null && spotsLeft <= 0;
+  const canRegister = !event.isRegistered && !event.isWaitlisted;
+
+  const handleRegister = async () => {
+    if (!canRegister) return;
+
+    setRegistering(true);
+    const result = await register(event.id);
+    setRegistering(false);
+
+    if (result.success) {
+      Alert.alert(
+        result.waitlisted ? 'Added to Waitlist' : 'Registered!',
+        result.waitlisted
+          ? "You're on the waitlist. We'll notify you if a spot opens up."
+          : 'You are registered for this event.',
+        [{ text: 'OK' }]
+      );
+    } else {
+      Alert.alert('Error', result.error || 'Failed to register');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.type}>{event.type.replace('_', ' ').toUpperCase()}</Text>
+        <Text style={styles.title}>{event.title}</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Date</Text>
+          <Text style={styles.infoValue}>{formattedDate}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Time</Text>
+          <Text style={styles.infoValue}>
+            {event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}
+          </Text>
+        </View>
+
+        {event.location && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Location</Text>
+            <Text style={styles.infoValue}>{event.location}</Text>
+          </View>
+        )}
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Price</Text>
+          <Text style={styles.infoValue}>{price}</Text>
+        </View>
+
+        {event.capacity && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Capacity</Text>
+            <Text style={[styles.infoValue, isFull && styles.infoValueFull]}>
+              {event.registeredCount} / {event.capacity}
+              {isFull ? ' (Full)' : ` (${spotsLeft} spots left)`}
+            </Text>
+          </View>
+        )}
+
+        {event.description && (
+          <View style={styles.descriptionSection}>
+            <Text style={styles.descriptionLabel}>About</Text>
+            <Text style={styles.description}>{event.description}</Text>
+          </View>
+        )}
+
+        {/* Status Badge */}
+        {event.isRegistered && (
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>✓ You're registered</Text>
+          </View>
+        )}
+        {event.isWaitlisted && (
+          <View style={[styles.statusBadge, styles.statusBadgeWaitlist]}>
+            <Text style={styles.statusText}>⏳ You're on the waitlist</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Register Button */}
+      {canRegister && (
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={[styles.registerButton, registering && styles.registerButtonDisabled]}
+            onPress={handleRegister}
+            disabled={registering}
+          >
+            {registering ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.registerButtonText}>
+                {isFull ? 'Join Waitlist' : 'Register'} • {price}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FDF8F3',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 16,
+  },
+  backButton: {
+    fontSize: 16,
+    color: '#1B4D3E',
+    fontWeight: '600',
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  content: {
+    paddingHorizontal: 24,
+    paddingBottom: 120,
+  },
+  type: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#E07A5F',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+    marginBottom: 24,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  infoValueFull: {
+    color: '#EF4444',
+  },
+  descriptionSection: {
+    marginTop: 24,
+  },
+  descriptionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 22,
+  },
+  statusBadge: {
+    marginTop: 24,
+    backgroundColor: '#D1FAE5',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  statusBadgeWaitlist: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#065F46',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 24,
+    backgroundColor: '#FDF8F3',
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+  },
+  registerButton: {
+    height: 56,
+    backgroundColor: '#1B4D3E',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  registerButtonDisabled: {
+    opacity: 0.7,
+  },
+  registerButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+});
+```
+
+**Step 2: Commit**
+
+```bash
+git add .
+git commit -m "feat: add event detail and registration screen"
+```
+
+---
+
+### Task 9: My Schedule Screen
+
+**Files:**
+- Create: `app/schedule.tsx`
+
+**Step 1: Create schedule screen**
+
+Create `app/schedule.tsx`:
+
+```tsx
+import { useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useClubStore } from '../stores/clubStore';
+import { Event } from '../lib/bamApi';
+
+interface ScheduleEvent extends Event {
+  clubName: string;
+}
+
+export default function ScheduleScreen() {
+  const router = useRouter();
+  const { schedule, loading, loadSchedule } = useClubStore();
+
+  useEffect(() => {
+    loadSchedule();
+  }, []);
+
+  const renderEvent = ({ item }: { item: ScheduleEvent }) => {
+    const dateObj = new Date(item.date);
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayNum = dateObj.getDate();
+    const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
+
+    return (
+      <TouchableOpacity
+        style={styles.eventCard}
+        onPress={() => router.push(`/event/${item.id}`)}
+      >
+        <View style={styles.dateBox}>
+          <Text style={styles.dayName}>{dayName}</Text>
+          <Text style={styles.dayNum}>{dayNum}</Text>
+          <Text style={styles.month}>{month}</Text>
+        </View>
+
+        <View style={styles.eventInfo}>
+          <Text style={styles.clubName}>{item.clubName}</Text>
+          <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.eventTime}>
+            {item.startTime}{item.endTime ? ` - ${item.endTime}` : ''}
+          </Text>
+          {item.location && (
+            <Text style={styles.eventLocation} numberOfLines={1}>{item.location}</Text>
+          )}
+        </View>
+
+        {item.isWaitlisted && (
+          <View style={styles.waitlistBadge}>
+            <Text style={styles.waitlistText}>Waitlist</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderEmpty = () => (
+    <View style={styles.empty}>
+      <Text style={styles.emptyIcon}>📅</Text>
+      <Text style={styles.emptyText}>No upcoming events</Text>
+      <Text style={styles.emptySubtext}>
+        Browse events to find games to join
+      </Text>
+      <TouchableOpacity
+        style={styles.browseButton}
+        onPress={() => router.push('/events')}
+      >
+        <Text style={styles.browseButtonText}>Browse Events</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>My Schedule</Text>
+        <View style={{ width: 60 }} />
+      </View>
+
+      <FlatList
+        data={schedule}
+        keyExtractor={(item) => item.id}
+        renderItem={renderEvent}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={renderEmpty}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={loadSchedule} />
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FDF8F3',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 16,
+  },
+  backButton: {
+    fontSize: 16,
+    color: '#1B4D3E',
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1B4D3E',
+  },
+  list: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  eventCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  dateBox: {
+    width: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1B4D3E',
+    borderRadius: 8,
+    padding: 8,
+  },
+  dayName: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
+    textTransform: 'uppercase',
+  },
+  dayNum: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  month: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.7)',
+    textTransform: 'uppercase',
+  },
+  eventInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  clubName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#E07A5F',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  eventTime: {
+    fontSize: 13,
+    color: '#666',
+  },
+  eventLocation: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  waitlistBadge: {
+    alignSelf: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 4,
+  },
+  waitlistText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#92400E',
+  },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 24,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  browseButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#1B4D3E',
+    borderRadius: 8,
+  },
+  browseButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+```
+
+**Step 2: Commit**
+
+```bash
+git add .
+git commit -m "feat: add My Schedule screen"
+```
+
+---
+
+## Phase 3: Table Linking (QR Code)
+
+### Task 10: Table Store & Game Types
 
 **Files:**
 - Create: `stores/tableStore.ts`
@@ -850,7 +2512,7 @@ git commit -m "feat: add table store with create/join logic"
 
 ---
 
-### Task 6: QR Code Generation (Start Table)
+### Task 11: QR Code Generation (Start Table)
 
 **Files:**
 - Install: `react-native-qrcode-svg`
@@ -1160,7 +2822,7 @@ git commit -m "feat: add QR code generation for starting tables"
 
 ---
 
-### Task 7: QR Code Scanner (Join Table)
+### Task 12: QR Code Scanner (Join Table)
 
 **Files:**
 - Install: `expo-camera`, `expo-barcode-scanner`
@@ -1431,9 +3093,9 @@ git commit -m "feat: add QR scanner for joining tables"
 
 ---
 
-## Phase 3: Game Play & Scoring
+## Phase 4: Game Play & Scoring
 
-### Task 8: Game On Screen
+### Task 13: Game On Screen
 
 **Files:**
 - Create: `app/table/game.tsx`
@@ -1736,7 +3398,7 @@ git commit -m "feat: add Game On screen with player cards"
 
 ---
 
-### Task 9: Enter Result Screen
+### Task 14: Enter Result Screen
 
 **Files:**
 - Create: `app/table/result.tsx`
@@ -2098,7 +3760,7 @@ git commit -m "feat: add Enter Result screen with winner and line selection"
 
 ---
 
-### Task 10: Push Notification Confirmation
+### Task 15: Push Notification Confirmation
 
 **Files:**
 - Install: `expo-notifications`
@@ -2353,9 +4015,9 @@ git commit -m "feat: add push notification confirmation flow"
 
 ---
 
-## Phase 4: Proxy Players
+## Phase 5: Proxy Players
 
-### Task 11: Add Proxy Player Flow
+### Task 16: Add Proxy Player Flow
 
 **Files:**
 - Create: `app/table/add-player.tsx`
@@ -2596,9 +4258,9 @@ git commit -m "feat: add proxy player flow (email or guest)"
 
 ---
 
-## Phase 5: NFC Sticker Support
+## Phase 6: NFC Sticker Support
 
-### Task 12: NFC Reading
+### Task 17: NFC Reading
 
 **Files:**
 - Install: `expo-nfc` (Note: Requires dev build, not Expo Go)
@@ -2733,9 +4395,9 @@ git commit -m "feat: add NFC sticker reading for table join"
 
 ---
 
-## Phase 6: Mahjic API Integration
+## Phase 7: Mahjic API Integration
 
-### Task 13: Connect to Mahjic API
+### Task 18: Connect to Mahjic API
 
 **Files:**
 - Create: `lib/mahjicApi.ts`
@@ -2891,9 +4553,9 @@ git commit -m "feat: integrate Mahjic API for player profiles"
 
 ---
 
-## Phase 7: Polish & App Store Prep
+## Phase 8: Polish & App Store Prep
 
-### Task 14: App Icons & Splash Screen
+### Task 19: App Icons & Splash Screen
 
 **Files:**
 - Create: `assets/icon.png` (1024x1024)
@@ -2968,7 +4630,7 @@ git commit -m "feat: add app icons and splash screen"
 
 ---
 
-### Task 15: Build & Submit
+### Task 20: Build & Submit
 
 **Step 1: Install EAS CLI**
 
@@ -3031,15 +4693,18 @@ git commit -m "chore: add EAS build configuration"
 
 | Phase | Tasks | Status |
 |-------|-------|--------|
-| 1. Setup & Auth | Expo scaffold, Supabase, magic link | ⬜ |
-| 2. Table Linking | QR generate, QR scan, deep links | ⬜ |
-| 3. Game Play | Game On screen, Enter Result, confirmations | ⬜ |
-| 4. Proxy Players | Add by email, add guest | ⬜ |
-| 5. NFC Support | Read stickers, write stickers | ⬜ |
-| 6. API Integration | Connect to mahjic.org, sync ratings | ⬜ |
-| 7. Polish | Icons, splash, App Store submit | ⬜ |
+| 1. Setup & Auth | Expo scaffold, Supabase, magic link, deep links | ⬜ |
+| 2. Clubs & Events | Bam Good Time API, club home, events, schedule, registration | ⬜ |
+| 3. Table Linking | QR generate, QR scan | ⬜ |
+| 4. Game Play | Game On screen, Enter Result, confirmations | ⬜ |
+| 5. Proxy Players | Add by email, add guest | ⬜ |
+| 6. NFC Support | Read stickers, write stickers | ⬜ |
+| 7. API Integration | Connect to mahjic.org, sync ratings | ⬜ |
+| 8. Polish | Icons, splash, App Store submit | ⬜ |
 
-**Estimated total:** 15 tasks across 7 phases
+**Estimated total:** 20 tasks across 8 phases
+
+**Auth Flow:** Users must have a Bam Good Time club account. Creating a profile on bamgoodtime.com automatically creates your Mahjic rating profile. The mobile app uses shared Supabase auth - same login works for both.
 
 ---
 

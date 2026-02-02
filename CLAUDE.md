@@ -152,5 +152,20 @@ NEXT_PUBLIC_APP_URL=https://mahjic.org
 pnpm dev              # Dev server
 pnpm build            # Production build
 supabase db push      # Push migrations
+supabase config push  # Push auth config (redirects, etc.)
 vercel --prod         # Deploy to production
 ```
+
+---
+
+## SUPABASE AUTH CONFIG
+
+Auth redirects are configured in `supabase/config.toml`:
+
+```toml
+[auth]
+site_url = "https://mahjic.org"
+additional_redirect_urls = ["https://mahjic.org", "https://mahjic.org/**", "http://127.0.0.1:3000", "http://localhost:3000"]
+```
+
+After changing, push with: `supabase config push --project-ref nevmbqdvivaqwvuzfrrn`

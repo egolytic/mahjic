@@ -60,6 +60,8 @@
 - [x] Extend webhook handler for payment completion
 - [x] Build multi-state UI on `/verify` page
 - [x] Deploy to production
+- [x] Fix Supabase Auth redirect URL for production login
+- [x] Test end-to-end verification flow in browser
 
 ## In Progress
 
@@ -76,7 +78,6 @@
 ### Phase 2: Growth
 
 - [ ] Configure Supabase Auth email templates
-- [ ] Add Supabase Auth redirect URL for production
 - [ ] Python client library
 - [ ] JavaScript client library
 - [ ] Regional leaderboards
@@ -97,7 +98,6 @@
 ## Known Issues
 
 1. Next.js 16 middleware deprecation warning (use "proxy" instead)
-2. Need to add Supabase Auth redirect URL for production login
 
 ## Learnings
 
