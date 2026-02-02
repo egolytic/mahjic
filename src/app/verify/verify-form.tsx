@@ -1,21 +1,62 @@
 "use client";
 
 import { useState } from "react";
+import type { VerificationStatus } from "@/types";
 
 interface VerifyFormProps {
   playerId?: string;
+  verificationStatus: VerificationStatus;
+  attemptsUsed: number;
+  maxAttempts: number;
 }
 
-export function VerifyForm({ playerId }: VerifyFormProps) {
+export function VerifyForm({
+  playerId,
+  verificationStatus,
+  attemptsUsed,
+  maxAttempts,
+}: VerifyFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStartVerification = async () => {
+  const attemptsRemaining = maxAttempts - attemptsUsed;
+  const canStartIdentity = verificationStatus === "paid" && attemptsRemaining > 0;
+
+  const handlePayment = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/verify/create-session", {
+      const response = await fetch("/api/verify/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to start checkout");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError("Failed to create checkout session");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStartIdentity = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/verify/start-identity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId }),
@@ -27,12 +68,10 @@ export function VerifyForm({ playerId }: VerifyFormProps) {
         throw new Error(data.error || "Failed to start verification");
       }
 
-      // TODO: Redirect to Stripe Identity verification session
-      // For now, we'll just show a placeholder message
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setError("Stripe Identity integration coming soon");
+        setError("Failed to create verification session");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -56,18 +95,37 @@ export function VerifyForm({ playerId }: VerifyFormProps) {
         </div>
       )}
 
-      <button
-        onClick={handleStartVerification}
-        disabled={isLoading || !playerId}
-        className="w-full rounded-full bg-coral px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-coral-hover disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isLoading ? "Starting..." : "Start Verification - $20"}
-      </button>
+      {/* Not paid yet - show payment button */}
+      {verificationStatus === "none" && (
+        <>
+          <button
+            onClick={handlePayment}
+            disabled={isLoading || !playerId}
+            className="w-full rounded-full bg-coral px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-coral-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading ? "Starting..." : "Pay $20 - Become Verified"}
+          </button>
+          <p className="mt-3 text-center text-xs text-text-light">
+            You&apos;ll be redirected to Stripe to complete payment, then return to verify your identity
+          </p>
+        </>
+      )}
 
-      <p className="mt-3 text-center text-xs text-text-light">
-        You&apos;ll be redirected to Stripe to complete payment and identity
-        verification
-      </p>
+      {/* Paid - show identity verification button */}
+      {canStartIdentity && (
+        <>
+          <button
+            onClick={handleStartIdentity}
+            disabled={isLoading || !playerId}
+            className="w-full rounded-full bg-green-deep px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-green-deep/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading ? "Starting..." : "Start Identity Verification"}
+          </button>
+          <p className="mt-3 text-center text-xs text-text-light">
+            You&apos;ll be redirected to Stripe to verify your ID. {attemptsRemaining} attempt{attemptsRemaining !== 1 ? "s" : ""} remaining.
+          </p>
+        </>
+      )}
     </div>
   );
 }

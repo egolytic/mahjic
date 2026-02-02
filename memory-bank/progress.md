@@ -51,6 +51,16 @@
 - [x] Add hummingbird logo
 - [x] Register BAM Good Time as Verified Source
 
+### Verification Subscription (Feb 1, 2026) ✅
+
+- [x] Design payment-first verification flow
+- [x] Add database columns (verification_status, attempts, etc.)
+- [x] Create `/api/verify/checkout` endpoint (Stripe Checkout)
+- [x] Create `/api/verify/start-identity` endpoint (Stripe Identity)
+- [x] Extend webhook handler for payment completion
+- [x] Build multi-state UI on `/verify` page
+- [x] Deploy to production
+
 ## In Progress
 
 ### BAM Good Time Integration

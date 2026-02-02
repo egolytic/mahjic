@@ -2,15 +2,38 @@
 
 ## Current State
 
-**Phase:** MVP Complete, Integration In Progress
+**Phase:** MVP Complete, Verification Subscription Live
 
-The Mahjic rating system is fully built and deployed. Now integrating with BAM Good Time.
+The Mahjic rating system is fully built and deployed with payment-first verification flow.
 
-## What Was Just Done (Jan 31, 2026)
+## What Was Just Done (Feb 1, 2026)
+
+### Verification Subscription Feature
+1. **Payment-first flow** - User pays $20 before identity verification
+2. **Attempt tracking** - 5 Stripe Identity attempts included
+3. **New API endpoints**:
+   - `POST /api/verify/checkout` - Stripe Checkout for $20 payment
+   - `POST /api/verify/start-identity` - Stripe Identity (requires payment)
+4. **Database columns** added to `players`:
+   - `verification_status` (none | paid | verified)
+   - `verification_paid_at`, `verification_attempts`, `verification_checkout_session_id`
+5. **Multi-state UI** on `/verify` page:
+   - Not paid → Payment button + warning about $2/attempt cost
+   - Paid → Identity verification button + attempts remaining
+   - Exhausted → Manual verification instructions
+   - Verified → Success confirmation
+
+### Policy
+- $20/year for verification
+- 5 identity attempts included (~$2/attempt cost to us)
+- No refunds for ragequits
+- Fail all 5 → Manual process (email + $10 fee)
+
+## What Was Done (Jan 31, 2026)
 
 ### Built Complete MVP
 1. **Next.js 16 app** with TypeScript, Tailwind, App Router
-2. **Supabase database** with 8 tables + RLS policies
+2. **Supabase database** with 9 tables + RLS policies
 3. **Full API** - sessions, players, leaderboard, sources
 4. **Authentication** - Supabase Auth with magic links
 5. **Stripe Identity** - verification flow for $20/year tier

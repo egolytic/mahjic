@@ -64,11 +64,12 @@ export async function POST(request: NextRequest) {
           .update({ status: "verified", verified_at: new Date().toISOString() })
           .eq("stripe_session_id", session.id);
 
-        // Update player to verified tier
+        // Update player to verified tier and status
         await supabase
           .from("players")
           .update({
             tier: "verified",
+            verification_status: "verified",
             verified_at: new Date().toISOString(),
           })
           .eq("id", playerId);
@@ -108,15 +109,23 @@ export async function POST(request: NextRequest) {
         if (session.metadata?.type === "verification_fee") {
           const playerId = session.metadata?.player_id;
 
-          console.log(`Payment completed for player ${playerId}, storing customer ID`);
+          console.log(`Verification payment completed for player ${playerId}`);
 
-          // Store Stripe customer ID for future billing
+          // Update player: set payment status, store customer ID and checkout session ID
+          const updateData: Record<string, unknown> = {
+            verification_status: "paid",
+            verification_paid_at: new Date().toISOString(),
+            verification_checkout_session_id: session.id,
+          };
+
           if (session.customer) {
-            await supabase
-              .from("players")
-              .update({ stripe_customer_id: session.customer as string })
-              .eq("id", playerId);
+            updateData.stripe_customer_id = session.customer as string;
           }
+
+          await supabase
+            .from("players")
+            .update(updateData)
+            .eq("id", playerId);
         }
 
         break;

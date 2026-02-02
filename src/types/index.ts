@@ -17,6 +17,14 @@
 export type PlayerTier = 'provisional' | 'verified';
 
 /**
+ * Player verification payment status.
+ * - none: Has not paid for verification
+ * - paid: Paid $20, awaiting identity verification (up to 5 attempts)
+ * - verified: Identity verification complete
+ */
+export type VerificationStatus = 'none' | 'paid' | 'verified';
+
+/**
  * Player privacy mode for how their data appears publicly.
  * - normal: Full participation, public profile
  * - private: Rated and portable, hidden from public search/leaderboards

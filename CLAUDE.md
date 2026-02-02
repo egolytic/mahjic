@@ -27,18 +27,19 @@ pnpm dev  # Start dev server at localhost:3000
 ## QUICK REFERENCE
 
 ### Project Status
-- **Phase:** MVP Complete, BAM Integration In Progress
+- **Phase:** MVP Complete, Verification Subscription Live
 - **Live:** https://mahjic.org
 - **GitHub:** https://github.com/egolytic/mahjic
 
 ### Key Files
 ```
-src/app/api/v1/     # REST API endpoints
-src/lib/elo.ts      # Rating algorithm
-src/lib/stripe.ts   # Stripe Identity
-src/lib/supabase/   # Database clients
-supabase/migrations/# Database schema
-docs/plans/         # Integration plans
+src/app/api/v1/           # REST API endpoints
+src/app/api/verify/       # Verification endpoints (checkout, start-identity)
+src/lib/elo.ts            # Rating algorithm
+src/lib/stripe.ts         # Stripe Identity + Checkout
+src/lib/supabase/         # Database clients
+supabase/migrations/      # Database schema
+docs/plans/               # Integration plans
 ```
 
 ### Core Concepts
@@ -47,12 +48,27 @@ docs/plans/         # Integration plans
 - **Verified Players:** $20/year + Stripe Identity, appear on leaderboards
 - **Two Ratings:** Mahjic Rating (all games) + Verified Rating (vs verified only)
 
+### Verification Flow (Payment First)
+```
+Pay $20 → verification_status = "paid"
+    ↓
+Start Identity (up to 5 attempts) → increments verification_attempts
+    ↓
+Pass ID check → verification_status = "verified", tier = "verified"
+    ↓
+Fail 5 times → Manual process (email support@mahjic.org + $10 fee)
+```
+
+**Policy:** Each failed attempt costs ~$2 (Stripe Identity fee). No refunds for ragequits.
+
 ### API Endpoints
 ```
-POST /api/v1/sessions     # Submit games (requires API key)
-GET  /api/v1/players/[id] # Player profile
-GET  /api/v1/leaderboard  # Verified rankings
-GET  /api/v1/sources      # List sources
+POST /api/v1/sessions       # Submit games (requires API key)
+GET  /api/v1/players/[id]   # Player profile
+GET  /api/v1/leaderboard    # Verified rankings
+GET  /api/v1/sources        # List sources
+POST /api/verify/checkout   # Start $20 payment
+POST /api/verify/start-identity  # Start ID verification (requires payment)
 ```
 
 ### BAM Good Time Integration
