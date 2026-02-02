@@ -55,6 +55,9 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
   elif [[ "$key" == "STRIPE_SECRET_KEY" ]] && [[ ! "$clean_value" =~ ^sk_(test|live)_ ]]; then
     echo "!  $key - expected to start with 'sk_test_' or 'sk_live_'"
     ISSUES=$((ISSUES + 1))
+  elif [[ "$key" == "STRIPE_SECRET_KEY" ]] && [[ "$ENVIRONMENT" == "production" ]] && [[ "$clean_value" =~ ^sk_test_ ]]; then
+    echo "X $key - production should use LIVE keys (sk_live_), not test keys"
+    ISSUES=$((ISSUES + 1))
   elif [[ "$key" == "NEXT_PUBLIC_SUPABASE_URL" ]] && [[ ! "$clean_value" =~ ^https:// ]]; then
     echo "!  $key - expected to start with 'https://'"
     ISSUES=$((ISSUES + 1))
