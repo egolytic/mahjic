@@ -169,7 +169,20 @@ pnpm build            # Production build
 supabase db push      # Push migrations
 supabase config push  # Push auth config (redirects, etc.)
 vercel --prod         # Deploy to production
+
+# Environment variable management
+./scripts/sync-env.sh .env.local production    # Sync env vars to Vercel (safe, no trailing newlines)
+./scripts/validate-env.sh production           # Validate env vars are clean and complete
 ```
+
+### Env Var Scripts
+
+**IMPORTANT:** Always use `./scripts/sync-env.sh` to upload env vars to Vercel. Copy/paste in the Vercel dashboard can introduce trailing newlines that break the app.
+
+| Script | Purpose |
+|--------|---------|
+| `sync-env.sh` | Uses `printf` to upload env vars without trailing newlines |
+| `validate-env.sh` | Checks for whitespace issues and validates required vars are present |
 
 ---
 

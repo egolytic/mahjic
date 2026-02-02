@@ -81,6 +81,14 @@
 - [x] Send from hello@mail.bamgoodtime.com domain
 - [x] Include invoice details for trademark filing evidence
 
+### Environment Variable Management (Feb 2, 2026) ✅
+
+- [x] Create `scripts/sync-env.sh` - Safe env var upload using printf (no trailing newlines)
+- [x] Create `scripts/validate-env.sh` - Validate env vars have no whitespace issues
+- [x] Fixed 6 existing Vercel env vars that had trailing newline characters
+- [x] Added RESEND_API_KEY and RESEND_FROM_EMAIL to Vercel production
+- [x] Redeployed to production with clean env vars
+
 ## In Progress
 
 ### BAM Good Time Integration
@@ -131,3 +139,9 @@
 - K-factor scaling (32 → 24 → 16) is appropriate
 - Points bonus ±5 cap prevents score from dominating
 - Pairwise comparison handles 4-player games naturally
+
+### Vercel Env Var Issues
+- Copy/paste in Vercel dashboard can introduce trailing newlines
+- Trailing newlines cause runtime errors (env vars don't match expected values)
+- Use `printf '%s' "$value" | vercel env add` to avoid trailing newlines
+- Always validate env vars after upload with `./scripts/validate-env.sh`
