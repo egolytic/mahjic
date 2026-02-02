@@ -98,6 +98,15 @@
 - [x] Updated validate-env.sh to catch localhost in production
 - [x] Full verification flow tested end-to-end: signup → pay → email received → identity verification ready
 
+### Stripe Live Mode (Feb 2, 2026) ✅
+
+- [x] Switched from test keys (`sk_test_...`) to live keys (`sk_live_...`)
+- [x] Updated Vercel production env var via CLI (using printf to avoid trailing newlines)
+- [x] Removed unused STRIPE_PUBLISHABLE_KEY from Vercel
+- [x] Updated .env.local and .env.production files
+- [ ] **TODO:** Create live webhook in Stripe dashboard for `https://mahjic.org/api/webhooks/stripe`
+- [ ] **TODO:** Add live STRIPE_WEBHOOK_SECRET to Vercel after webhook creation
+
 ## In Progress
 
 ### BAM Good Time Integration

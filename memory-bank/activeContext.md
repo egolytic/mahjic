@@ -8,6 +8,13 @@ The Mahjic rating system is fully built and deployed with payment-first verifica
 
 ## What Was Just Done (Feb 2, 2026)
 
+### Stripe Switched to Live Mode
+1. **Secret key updated** - Now using `sk_live_...` instead of `sk_test_...`
+2. **Vercel env var updated** - STRIPE_SECRET_KEY changed via CLI with `printf` (no trailing newlines)
+3. **Removed STRIPE_PUBLISHABLE_KEY** - Not needed server-side
+4. **Webhook secret** - Needs to be created in Stripe dashboard for live mode webhook at `https://mahjic.org/api/webhooks/stripe`
+5. **Real charges now active** - $20 verification payments will process real money
+
 ### Verification UX Improvements
 1. **Homepage CTAs** - Added prominent "Get Verified - $20/year" buttons:
    - Hero section: Primary CTA now for player verification
