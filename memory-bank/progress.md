@@ -104,8 +104,8 @@
 - [x] Updated Vercel production env var via CLI (using printf to avoid trailing newlines)
 - [x] Removed unused STRIPE_PUBLISHABLE_KEY from Vercel
 - [x] Updated .env.local and .env.production files
-- [ ] **TODO:** Create live webhook in Stripe dashboard for `https://mahjic.org/api/webhooks/stripe`
-- [ ] **TODO:** Add live STRIPE_WEBHOOK_SECRET to Vercel after webhook creation
+- [x] Created live webhook via Stripe CLI for `https://mahjic.org/api/webhooks/stripe`
+- [x] Added live STRIPE_WEBHOOK_SECRET to Vercel production
 
 ## In Progress
 
