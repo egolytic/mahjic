@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { UserMenu } from "@/components/auth/user-menu";
@@ -43,17 +44,66 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Use admin client to bypass RLS for auto-creation
+  const adminSupabase = createAdminClient();
+
   // Try to get player data for this user
-  // Note: This assumes a 'players' table exists with 'auth_user_id' column
-  // linking to Supabase Auth users
-  const { data: player } = await supabase
+  const { data: existingPlayer, error: fetchError } = await adminSupabase
     .from("players")
     .select("*")
     .eq("auth_user_id", user.id)
     .single();
 
+  // Handle fetch error (but not "no rows found" which is expected for new users)
+  if (fetchError && fetchError.code !== "PGRST116") {
+    console.error("Error fetching player:", fetchError);
+    // Fall through to auto-creation attempt
+  }
+
+  // Auto-create player profile if it doesn't exist
+  let playerData = existingPlayer;
+  if (!existingPlayer) {
+    const playerName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "Player";
+
+    const { data: newPlayer, error: createError } = await adminSupabase
+      .from("players")
+      .insert({
+        name: playerName,
+        email: user.email,
+        auth_user_id: user.id,
+        tier: "provisional",
+        privacy_mode: "normal",
+        mahjic_rating: 1500,
+        verified_rating: 1500,
+        games_played: 0,
+        subscription_status: "none",
+        verification_status: "none",
+        verification_attempts: 0,
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error("Failed to auto-create player profile:", createError);
+      // Redirect to error page or show error state
+      redirect("/error?message=Failed+to+create+player+profile");
+    }
+
+    console.log(
+      `Dashboard: Auto-created player profile for ${user.email} (auth_user_id: ${user.id})`
+    );
+    playerData = newPlayer;
+  }
+
+  // At this point playerData is guaranteed to exist
+  // TypeScript assertion since we either have existingPlayer or newPlayer
+  const player = playerData!;
+
   // Get recent game history
-  // Note: This assumes a 'round_results' or similar table exists
   interface GameSessionData {
     session_date: string;
     game_type: string;
@@ -67,7 +117,7 @@ export default async function DashboardPage() {
     rating_change: number;
     game_sessions: GameSessionData | null;
   }
-  const { data: recentGames } = await supabase
+  const { data: recentGames } = await adminSupabase
     .from("round_results")
     .select(`
       id,
@@ -81,18 +131,9 @@ export default async function DashboardPage() {
         verified_sources (name)
       )
     `)
-    .eq("player_id", player?.id)
+    .eq("player_id", player.id)
     .order("created_at", { ascending: false })
     .limit(10) as { data: RecentGame[] | null };
-
-  // Default values if player doesn't exist yet
-  const playerData = player || {
-    name: user.email?.split("@")[0] || "Player",
-    tier: "provisional" as PlayerTier,
-    mahjic_rating: 1500,
-    verified_rating: 1500,
-    games_played: 0,
-  };
 
   return (
     <div className="min-h-screen bg-cream">
@@ -111,7 +152,7 @@ export default async function DashboardPage() {
 
       <main className="mx-auto max-w-5xl px-4 py-8">
         {/* Verification CTA Banner for Provisional Players */}
-        {playerData.tier === "provisional" && (
+        {player.tier === "provisional" && (
           <div className="mb-6 rounded-2xl border-2 border-gold bg-gradient-to-r from-gold/10 to-coral/10 p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -138,12 +179,12 @@ export default async function DashboardPage() {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="font-display text-2xl font-bold text-text">
-                  {playerData.name}
+                  {player.name}
                 </h1>
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${getTierBadgeClasses(playerData.tier)}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${getTierBadgeClasses(player.tier)}`}
                 >
-                  {playerData.tier === "verified" ? "Verified" : "Provisional"}
+                  {player.tier === "verified" ? "Verified" : "Provisional"}
                 </span>
               </div>
               <p className="mt-1 text-sm text-text-light">
@@ -151,7 +192,7 @@ export default async function DashboardPage() {
               </p>
             </div>
 
-            {playerData.tier === "provisional" && (
+            {player.tier === "provisional" && (
               <Link
                 href="/verify"
                 className="inline-flex items-center justify-center rounded-full bg-coral px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-coral-hover"
@@ -168,10 +209,10 @@ export default async function DashboardPage() {
                 Mahjic Rating
               </p>
               <p className="mt-1 font-display text-3xl font-bold text-text">
-                {playerData.mahjic_rating}
+                {player.mahjic_rating}
               </p>
               <p className="mt-1 text-sm text-text-light">
-                {getRatingTier(playerData.mahjic_rating)}
+                {getRatingTier(player.mahjic_rating)}
               </p>
             </div>
 
@@ -180,11 +221,11 @@ export default async function DashboardPage() {
                 Verified Rating
               </p>
               <p className="mt-1 font-display text-3xl font-bold text-text">
-                {playerData.verified_rating}
+                {player.verified_rating}
               </p>
               <p className="mt-1 text-sm text-text-light">
-                {playerData.tier === "verified"
-                  ? getRatingTier(playerData.verified_rating)
+                {player.tier === "verified"
+                  ? getRatingTier(player.verified_rating)
                   : "Upgrade to unlock"}
               </p>
             </div>
@@ -194,7 +235,7 @@ export default async function DashboardPage() {
                 Games Played
               </p>
               <p className="mt-1 font-display text-3xl font-bold text-text">
-                {playerData.games_played}
+                {player.games_played}
               </p>
             </div>
 
@@ -203,10 +244,10 @@ export default async function DashboardPage() {
                 Leaderboard Status
               </p>
               <p className="mt-1 font-display text-lg font-semibold text-text">
-                {playerData.tier === "verified" ? "Visible" : "Hidden"}
+                {player.tier === "verified" ? "Visible" : "Hidden"}
               </p>
               <p className="mt-1 text-sm text-text-light">
-                {playerData.tier === "verified"
+                {player.tier === "verified"
                   ? "You appear on public leaderboards"
                   : "Verify to appear on leaderboards"}
               </p>
