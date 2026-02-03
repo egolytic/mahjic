@@ -126,3 +126,44 @@ export async function createBillingPortalSession({
 
   return session;
 }
+
+/**
+ * Create a verification session for the mobile SDK.
+ * Returns both the session ID and an ephemeral key for native mobile verification.
+ */
+export async function createMobileVerificationSession({
+  playerId,
+  userId,
+}: {
+  playerId: string;
+  userId: string;
+}) {
+  // Create the verification session (no return_url needed for mobile)
+  const session = await stripe.identity.verificationSessions.create({
+    type: 'document',
+    metadata: {
+      player_id: playerId,
+      user_id: userId,
+    },
+    options: {
+      document: {
+        allowed_types: ['driving_license', 'passport', 'id_card'],
+        require_id_number: false,
+        require_live_capture: true,
+        require_matching_selfie: true,
+      },
+    },
+  });
+
+  // Create an ephemeral key for the mobile SDK
+  // The mobile SDK needs this to securely access the verification session
+  const ephemeralKey = await stripe.ephemeralKeys.create(
+    { verification_session: session.id },
+    { apiVersion: '2024-12-18.acacia' }
+  );
+
+  return {
+    verificationSessionId: session.id,
+    ephemeralKeySecret: ephemeralKey.secret!,
+  };
+}

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { playerId, userEmail } = await request.json();
+    const { playerId, userEmail, successUrl, cancelUrl } = await request.json();
 
     let player;
 
@@ -113,13 +113,17 @@ export async function POST(request: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+    // Use custom URLs if provided (for mobile app), otherwise use web URLs
+    const finalSuccessUrl = successUrl || `${appUrl}/verify?payment=success`;
+    const finalCancelUrl = cancelUrl || `${appUrl}/verify?payment=canceled`;
+
     // Create Stripe Checkout session for $20 payment
     const checkoutSession = await createCheckoutSession({
       playerId: player.id,
       userId: user.id,
       customerEmail: user.email || player.email,
-      successUrl: `${appUrl}/verify?payment=success`,
-      cancelUrl: `${appUrl}/verify?payment=canceled`,
+      successUrl: finalSuccessUrl,
+      cancelUrl: finalCancelUrl,
     });
 
     return NextResponse.json({
