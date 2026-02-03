@@ -2,6 +2,8 @@
 
 **Open rating system for American Mahjong**
 
+> **Part of the Mahjic Ecosystem** - See `~/Desktop/MAHJIC-ECOSYSTEM.md` for cross-project architecture
+
 ---
 
 ## SESSION START
