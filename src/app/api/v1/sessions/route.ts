@@ -22,6 +22,7 @@ import { BOB_EMAIL, STARTING_RATING } from "@/types";
 
 interface PlayerResult {
   mahjic_id: string;
+  bgt_user_id: string | null;
   email: string;
   is_new_player: boolean;
   rating_before: number;
@@ -156,6 +157,7 @@ async function processRound(
   // Get or create players
   const playersData: Array<{
     id: string;
+    bgtUserId: string | null;
     email: string;
     mahjicRating: number;
     verifiedRating: number;
@@ -174,6 +176,7 @@ async function processRound(
     if (parsed.email === BOB_EMAIL) {
       playersData.push({
         id: "bob",
+        bgtUserId: null,
         email: BOB_EMAIL,
         mahjicRating: STARTING_RATING,
         verifiedRating: STARTING_RATING,
@@ -187,30 +190,81 @@ async function processRound(
       continue;
     }
 
-    // Check if player exists
-    const { data: existingPlayer, error: playerError } = await supabase
-      .from("players")
-      .select("id, email, mahjic_rating, verified_rating, games_played, tier, privacy_mode")
-      .eq("email", parsed.email)
-      .single();
+    // Get bgt_user_id from input (if provided)
+    const bgtUserId = playerInput.bgt_user_id;
 
-    let player = existingPlayer;
+    let player: {
+      id: string;
+      email: string;
+      mahjic_rating: number;
+      verified_rating: number;
+      games_played: number;
+      tier: string;
+      privacy_mode: string;
+      bgt_user_id?: string | null;
+    } | null = null;
     let isNew = false;
 
-    if (playerError || !player) {
-      // Create new player
+    // 1. Try lookup by bgt_user_id first (if provided)
+    if (bgtUserId) {
+      const { data: byUuid } = await supabase
+        .from("players")
+        .select("id, email, mahjic_rating, verified_rating, games_played, tier, privacy_mode, bgt_user_id")
+        .eq("bgt_user_id", bgtUserId)
+        .single();
+
+      if (byUuid) {
+        player = byUuid;
+      }
+    }
+
+    // 2. Try lookup by email (if not found by UUID)
+    if (!player) {
+      const { data: byEmail } = await supabase
+        .from("players")
+        .select("id, email, mahjic_rating, verified_rating, games_played, tier, privacy_mode, bgt_user_id")
+        .eq("email", parsed.email)
+        .single();
+
+      if (byEmail) {
+        // Auto-link: If we have bgt_user_id but player found by email doesn't have it, link them
+        if (bgtUserId && !byEmail.bgt_user_id) {
+          const { data: updated } = await supabase
+            .from("players")
+            .update({ bgt_user_id: bgtUserId })
+            .eq("id", byEmail.id)
+            .select("id, email, mahjic_rating, verified_rating, games_played, tier, privacy_mode, bgt_user_id")
+            .single();
+
+          console.log(`Auto-linked player ${byEmail.email} to bgt_user_id ${bgtUserId}`);
+          player = updated || byEmail;
+        } else {
+          player = byEmail;
+        }
+      }
+    }
+
+    // 3. Create new player if not found
+    if (!player) {
+      const newPlayerData: Record<string, unknown> = {
+        email: parsed.email,
+        name: parsed.isAnonymous ? parsed.email.slice(5) : null, // Use nickname for anonymous
+        tier: "provisional",
+        privacy_mode: parsed.privacyMode,
+        mahjic_rating: STARTING_RATING,
+        verified_rating: STARTING_RATING,
+        games_played: 0,
+      };
+
+      // Include bgt_user_id if provided
+      if (bgtUserId) {
+        newPlayerData.bgt_user_id = bgtUserId;
+      }
+
       const { data: newPlayer, error: createError } = await supabase
         .from("players")
-        .insert({
-          email: parsed.email,
-          name: parsed.isAnonymous ? parsed.email.slice(5) : null, // Use nickname for anonymous
-          tier: "provisional",
-          privacy_mode: parsed.privacyMode,
-          mahjic_rating: STARTING_RATING,
-          verified_rating: STARTING_RATING,
-          games_played: 0,
-        })
-        .select("id, email, mahjic_rating, verified_rating, games_played, tier, privacy_mode")
+        .insert(newPlayerData)
+        .select("id, email, mahjic_rating, verified_rating, games_played, tier, privacy_mode, bgt_user_id")
         .single();
 
       if (createError || !newPlayer) {
@@ -224,6 +278,7 @@ async function processRound(
 
     playersData.push({
       id: player.id,
+      bgtUserId: player.bgt_user_id || null,
       email: player.email,
       mahjicRating: player.mahjic_rating,
       verifiedRating: player.verified_rating,
@@ -275,6 +330,7 @@ async function processRound(
     if (playerData.id === "bob") {
       results.push({
         mahjic_id: "bob",
+        bgt_user_id: null,
         email: BOB_EMAIL,
         is_new_player: false,
         rating_before: STARTING_RATING,
@@ -362,6 +418,7 @@ async function processRound(
 
     results.push({
       mahjic_id: playerData.id,
+      bgt_user_id: playerData.bgtUserId,
       email: playerData.email,
       is_new_player: playerData.isNew,
       rating_before: playerData.mahjicRating,
