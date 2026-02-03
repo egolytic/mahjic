@@ -10,7 +10,8 @@ import { GameType } from "@/types";
  * API input for a player within a round (snake_case to match API spec).
  */
 export interface RoundPlayerInput {
-  email: string;
+  bgt_user_id?: string; // Primary identifier from BGT (UUID)
+  email: string;        // Required for display/fallback
   games_played: number;
   mahjongs: number;
   points?: number;
@@ -211,6 +212,15 @@ function validateRoundPlayer(
   }
 
   const p = player as Record<string, unknown>;
+
+  // Validate bgt_user_id (optional, but must be valid UUID if provided)
+  if (p.bgt_user_id !== undefined && p.bgt_user_id !== null) {
+    if (typeof p.bgt_user_id !== "string") {
+      errors.push({ field: `${field}.bgt_user_id`, message: "bgt_user_id must be a string" });
+    } else if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.bgt_user_id)) {
+      errors.push({ field: `${field}.bgt_user_id`, message: "bgt_user_id must be a valid UUID" });
+    }
+  }
 
   // Validate email
   if (!p.email) {
