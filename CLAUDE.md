@@ -112,6 +112,27 @@ Source ID: 5c1c7973-c840-45da-a0f7-34f39959131d
 Plan: docs/plans/2026-01-31-bam-mahjic-integration.md
 ```
 
+### UUID-Based Identity Linking (Feb 2026)
+
+BGT now sends `bgt_user_id` (auth.users.id UUID) with score submissions instead of relying on email matching.
+
+**How it works:**
+1. Session submissions can include `bgt_user_id` per player
+2. Lookup order: UUID first → email fallback → create new player
+3. Auto-linking: If player found by email but has no UUID, we link them
+4. Response includes `bgt_user_id` for result mapping
+
+**Database:**
+- `players.bgt_user_id` - UUID column linking to BGT auth.users.id
+- Unique constraint ensures one BGT user per Mahjic player
+
+**Backward Compatible:** Email-only submissions still work.
+
+**Key files:**
+- `src/app/api/v1/sessions/route.ts` - Three-step player lookup
+- `src/lib/api/validation.ts` - bgt_user_id in schema
+- `supabase/migrations/20260203100000_add_bgt_user_id.sql`
+
 ### ELO Algorithm
 - Win rate comparison: `mahjongs / games_played`
 - Pairwise comparison between all tablemates

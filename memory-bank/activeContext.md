@@ -2,13 +2,43 @@
 
 ## Current State
 
-**Phase:** MVP Complete, Yearly Subscription Model Live
+**Phase:** MVP Complete, UUID Identity Linking Deployed
 
-The Mahjic rating system is fully built with Stripe Identity + yearly subscription verification.
+The Mahjic rating system is fully built with Stripe Identity + yearly subscription verification. UUID-based identity linking with BGT is now live.
 
 ## What Was Just Done (Feb 3, 2026)
 
-### Stripe Identity Enabled for Live Mode
+### UUID-Based Identity Linking (MAJOR FEATURE)
+
+Implemented UUID-based player matching between BGT and Mahjic.org, replacing fragile email-based matching.
+
+**Commits:**
+- `b9ad8e6` - Auto-create player profile on /api/players/me
+- `c9a143a` - Remove fake data fallback from dashboard
+- `896286e` - Add bgt_user_id column migration
+- `3a40a71` - Add bgt_user_id to validation schema
+- `7a6e8bd` - Support bgt_user_id in session submissions
+
+**What it does:**
+1. **Profile Auto-Creation:** `/api/players/me` now auto-creates provisional profiles for new users (no more 404)
+2. **UUID Column:** New `bgt_user_id` column in `players` table links to BGT's `auth.users.id`
+3. **Three-Step Lookup:** Session submissions now: UUID lookup → email fallback → create new
+4. **Auto-Linking:** Existing email-only players get linked on first UUID submission
+5. **Response Includes UUID:** BGT can map results by userId directly
+
+**Database Migration:**
+```sql
+ALTER TABLE players ADD COLUMN bgt_user_id uuid UNIQUE;
+CREATE INDEX idx_players_bgt_user_id ON players(bgt_user_id) WHERE bgt_user_id IS NOT NULL;
+```
+
+**Backward Compatible:** Email-only submissions still work exactly as before.
+
+**Testing Script:** See `~/Desktop/Bam Good Time/bam-good-time/docs/plans/2026-02-03-uuid-identity-linking-testing.md`
+
+---
+
+### Stripe Identity Enabled for Live Mode (Earlier Feb 3)
 1. **Root cause found** - Identity wasn't activated for live mode (only test mode worked)
 2. **Fixed** - Enabled Stripe Identity via dashboard application
 3. **Features enabled** - Document verification, synthetic identity protection, mobile SDK
