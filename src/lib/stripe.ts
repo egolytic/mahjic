@@ -7,9 +7,11 @@ if (!process.env.STRIPE_SECRET_KEY) {
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 /**
- * Verification price: $20/year
+ * Verification subscription: $20/year
+ * Created via Stripe API - lookup_key for price lookup
  */
-export const VERIFICATION_PRICE_CENTS = 2000;
+export const VERIFICATION_PRICE_LOOKUP_KEY = 'mahjic_verified_yearly';
+export const VERIFICATION_PRICE_ID = 'price_1SwjWPCy5VSUqVRV7aLaOeEh';
 
 /**
  * Create a Stripe Identity verification session for a player.
@@ -51,7 +53,7 @@ export async function getVerificationSession(sessionId: string) {
 }
 
 /**
- * Create a Checkout Session for the $20/year verification fee.
+ * Create a Checkout Session for the $20/year verification subscription.
  */
 export async function createCheckoutSession({
   playerId,
@@ -66,22 +68,35 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
+  // Check if customer already exists
+  const existingCustomers = await stripe.customers.list({
+    email: customerEmail,
+    limit: 1,
+  });
+
+  const customerOptions: { customer?: string; customer_email?: string } = {};
+  if (existingCustomers.data.length > 0) {
+    customerOptions.customer = existingCustomers.data[0].id;
+  } else {
+    customerOptions.customer_email = customerEmail;
+  }
+
   const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    customer_email: customerEmail,
+    mode: 'subscription',
+    ...customerOptions,
     line_items: [
       {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Mahjic Verified Player',
-            description: 'Annual verified player status with leaderboard access',
-          },
-          unit_amount: VERIFICATION_PRICE_CENTS,
-        },
+        price: VERIFICATION_PRICE_ID,
         quantity: 1,
       },
     ],
+    subscription_data: {
+      metadata: {
+        player_id: playerId,
+        user_id: userId,
+        type: 'verification_subscription',
+      },
+    },
     metadata: {
       player_id: playerId,
       user_id: userId,
@@ -89,6 +104,24 @@ export async function createCheckoutSession({
     },
     success_url: successUrl,
     cancel_url: cancelUrl,
+  });
+
+  return session;
+}
+
+/**
+ * Create a Billing Portal session for subscription management.
+ */
+export async function createBillingPortalSession({
+  customerId,
+  returnUrl,
+}: {
+  customerId: string;
+  returnUrl: string;
+}) {
+  const session = await stripe.billingPortal.sessions.create({
+    customer: customerId,
+    return_url: returnUrl,
   });
 
   return session;

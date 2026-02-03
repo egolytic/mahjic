@@ -110,9 +110,9 @@ export async function POST(request: NextRequest) {
         if (session.metadata?.type === "verification_fee") {
           const playerId = session.metadata?.player_id;
 
-          console.log(`Verification payment completed for player ${playerId}`);
+          console.log(`Verification subscription started for player ${playerId}`);
 
-          // Update player: set payment status, store customer ID and checkout session ID
+          // Update player: set payment status, store customer ID and subscription ID
           const updateData: Record<string, unknown> = {
             verification_status: "paid",
             verification_paid_at: new Date().toISOString(),
@@ -121,6 +121,11 @@ export async function POST(request: NextRequest) {
 
           if (session.customer) {
             updateData.stripe_customer_id = session.customer as string;
+          }
+
+          if (session.subscription) {
+            updateData.stripe_subscription_id = session.subscription as string;
+            updateData.subscription_status = "active";
           }
 
           await supabase
@@ -155,6 +160,110 @@ export async function POST(request: NextRequest) {
               // Log but don't fail the webhook - payment was successful
               console.error("Failed to send welcome email:", emailError);
             }
+          }
+        }
+
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const playerId = subscription.metadata?.player_id;
+
+        if (playerId) {
+          console.log(`Subscription updated for player ${playerId}: ${subscription.status}`);
+
+          await supabase
+            .from("players")
+            .update({
+              subscription_status: subscription.status,
+            })
+            .eq("id", playerId);
+        }
+
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const playerId = subscription.metadata?.player_id;
+
+        if (playerId) {
+          console.log(`Subscription canceled for player ${playerId}`);
+
+          // Mark subscription as canceled but keep verified status
+          // (they paid for the year, identity is still verified)
+          await supabase
+            .from("players")
+            .update({
+              subscription_status: "canceled",
+            })
+            .eq("id", playerId);
+        }
+
+        break;
+      }
+
+      case "invoice.paid": {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any;
+
+        // Only process subscription renewals (not first payment)
+        if (invoice.billing_reason === "subscription_cycle") {
+          // subscription can be string ID or expanded Subscription object
+          const subscriptionId = typeof invoice.subscription === 'string'
+            ? invoice.subscription
+            : invoice.subscription?.id;
+
+          // Find player by subscription ID
+          const { data: player } = await supabase
+            .from("players")
+            .select("id, email, display_name")
+            .eq("stripe_subscription_id", subscriptionId)
+            .single();
+
+          if (player) {
+            console.log(`Subscription renewed for player ${player.id}`);
+
+            // Update paid_at timestamp
+            await supabase
+              .from("players")
+              .update({
+                verification_paid_at: new Date().toISOString(),
+                subscription_status: "active",
+              })
+              .eq("id", player.id);
+          }
+        }
+
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const invoice = event.data.object as any;
+        // subscription can be string ID or expanded Subscription object
+        const subscriptionId = typeof invoice.subscription === 'string'
+          ? invoice.subscription
+          : invoice.subscription?.id;
+
+        if (subscriptionId) {
+          // Find player by subscription ID
+          const { data: player } = await supabase
+            .from("players")
+            .select("id")
+            .eq("stripe_subscription_id", subscriptionId)
+            .single();
+
+          if (player) {
+            console.log(`Payment failed for player ${player.id}`);
+
+            await supabase
+              .from("players")
+              .update({
+                subscription_status: "past_due",
+              })
+              .eq("id", player.id);
           }
         }
 
