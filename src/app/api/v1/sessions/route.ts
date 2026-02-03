@@ -64,38 +64,50 @@ export async function POST(request: NextRequest) {
   const input = body as SessionInput;
   const supabase = createAdminClient();
 
-  // Create the game session
-  const { data: session, error: sessionError } = await supabase
-    .from("game_sessions")
+  // Create the event (unified schema - replaces game_sessions)
+  const EXTERNAL_ORG_ID = '00000000-0000-0000-0000-000000000001'; // Mahjic External Submissions org
+  const eventType = input.game_type === 'league' ? 'league' : input.game_type === 'tournament' ? 'event' : 'open_play';
+
+  const { data: event, error: eventError } = await supabase
+    .from("events")
     .insert({
+      org_id: EXTERNAL_ORG_ID,
+      title: `${source.name} - ${input.session_date}`,
+      type: eventType,
+      date: input.session_date,
+      start_time: '00:00:00',
+      status: 'completed',
       source_id: source.id,
-      session_date: input.session_date,
       game_type: input.game_type,
+      price_cents: 0,
+      payment_mode: 'free',
     })
     .select("id")
     .single();
 
-  if (sessionError || !session) {
-    console.error("Failed to create session:", sessionError);
-    return apiError("database_error", "Failed to create session", 500);
+  if (eventError || !event) {
+    console.error("Failed to create event:", eventError);
+    return apiError("database_error", "Failed to create event", 500);
   }
 
   const allResults: PlayerResult[] = [];
   const includePointsBonus = input.game_type === "league" || input.game_type === "tournament";
 
   // Process each round
-  for (const roundInput of input.rounds) {
+  for (let roundIndex = 0; roundIndex < input.rounds.length; roundIndex++) {
+    const roundInput = input.rounds[roundIndex];
     const roundResults = await processRound(
       supabase,
-      session.id,
+      event.id,
+      roundIndex,
       roundInput,
       source.id,
       includePointsBonus
     );
 
     if (roundResults.error) {
-      // Rollback: delete the session (cascades to rounds)
-      await supabase.from("game_sessions").delete().eq("id", session.id);
+      // Rollback: delete the event (cascades to rounds)
+      await supabase.from("events").delete().eq("id", event.id);
       return apiError("processing_error", roundResults.error, 500);
     }
 
@@ -119,7 +131,7 @@ export async function POST(request: NextRequest) {
   }
 
   return apiSuccess({
-    session_id: session.id,
+    event_id: event.id,
     results: Array.from(playerResultMap.values()),
   }, 201);
 }
@@ -131,18 +143,23 @@ interface ProcessRoundResult {
 
 async function processRound(
   supabase: ReturnType<typeof createAdminClient>,
-  sessionId: string,
+  eventId: string,
+  roundIndex: number,
   roundInput: RoundInput,
   sourceId: string,
   includePointsBonus: boolean
 ): Promise<ProcessRoundResult> {
   const gamesPlayed = roundInput.players[0].games_played;
+  const roundNumber = roundIndex + 1;
+  const tableNumber = roundIndex + 1; // For simple cases, use same as round number
 
   // Create the round record
   const { data: round, error: roundError } = await supabase
     .from("rounds")
     .insert({
-      session_id: sessionId,
+      event_id: eventId,
+      round_number: roundNumber,
+      table_number: tableNumber,
       games_played: gamesPlayed,
       wall_games: roundInput.wall_games,
     })

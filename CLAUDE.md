@@ -163,9 +163,9 @@ sum(all mahjongs) + wall_games = games_played
 
 | Table | Purpose |
 |-------|---------|
-| `players` | Accounts, ratings, tier |
+| `players` | Accounts, ratings, tier, verification status |
 | `verified_sources` | Clubs that submit games |
-| `game_sessions` | Container for games |
+| `events` | Game sessions (shared with BGT) |
 | `rounds` | Same 4 people playing |
 | `round_players` | Individual results |
 | `rating_history` | Rating over time |
@@ -178,8 +178,8 @@ sum(all mahjongs) + wall_games = games_played
 ## ENVIRONMENT VARIABLES
 
 ```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://nevmbqdvivaqwvuzfrrn.supabase.co
+# Supabase (shared with BGT - Feb 2026)
+NEXT_PUBLIC_SUPABASE_URL=https://yeyhwsrlnvbvzrwqbqku.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 
@@ -203,6 +203,27 @@ NEXT_PUBLIC_APP_URL=https://mahjic.org
 - Reference implementation, Verified Source #1
 - Shares ELO algorithm and brand colors
 - Integration plan in `docs/plans/`
+
+---
+
+## Shared Supabase (Feb 2026)
+
+**Architecture:** Mahjic.org now shares BGT's Supabase (`yeyhwsrlnvbvzrwqbqku.supabase.co`).
+
+**Backup:** Original Supabase config saved as `.env.backup.mahjic-supabase`
+
+**What changed:**
+- `game_sessions` table → `events` table (BGT's)
+- Same `players`, `rounds`, `round_players`, `rating_history` tables
+- Same auth system as BGT and Mahjic App
+- Player profiles are in the `players` table with `mahjic_rating` and `verified_rating`
+
+**Key tables:**
+- `players` - Global player profiles with ratings, verification status
+- `verified_sources` - Approved clubs/platforms that can submit game results
+- `rounds` - Game rounds within events
+- `round_players` - Per-player per-round results with rating tracking
+- `rating_history` - Historical rating changes for audit trail
 
 ---
 
