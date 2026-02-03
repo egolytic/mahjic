@@ -49,27 +49,49 @@ docs/plans/               # Integration plans
 - **Verified Players:** $20/year + Stripe Identity, appear on leaderboards
 - **Two Ratings:** Mahjic Rating (all games) + Verified Rating (vs verified only)
 
-### Verification Flow (Payment First)
+### Verification Flow (Yearly Subscription)
 
 **New Users (no player profile yet):**
 ```
-Sign up → Pay $20 → Player profile auto-created (1500 rating)
+Sign up → Subscribe $20/year → Player profile auto-created (1500 rating)
     ↓
 Start Identity → Pass → verification_status = "verified", tier = "verified"
     ↓
 Ready to play in tournaments requiring verification
+    ↓
+Auto-renews yearly (webhooks handle status updates)
 ```
 
 **Existing Players:**
 ```
-Play at club → Claim profile → Pay $20 → Start Identity → Verified
+Play at club → Claim profile → Subscribe $20/year → Start Identity → Verified
 ```
 
-**Attempts & Policy:**
-- 5 identity attempts included
+**Stripe Configuration (Live Mode):**
+```
+Product ID: prod_TuYdoDL4rmjuL2
+Price ID: price_1SwjWPCy5VSUqVRV7aLaOeEh
+Lookup Key: mahjic_verified_yearly
+Webhook: https://mahjic.org/api/webhooks/stripe
+```
+
+**Subscription Webhook Events:**
+- `checkout.session.completed` - Initial subscription
+- `customer.subscription.updated` - Status changes
+- `customer.subscription.deleted` - Cancellation
+- `invoice.paid` - Yearly renewal
+- `invoice.payment_failed` - Payment issues
+
+**Identity Verification:**
+- 5 attempts included
 - Each failed attempt costs ~$2 (Stripe Identity fee)
-- No refunds for ragequits
 - Fail 5 times → Manual process (email support@mahjic.org + $10 fee)
+
+**Subscription Status Values:**
+- `none` - No subscription
+- `active` - Current, paid
+- `past_due` - Payment failed, grace period
+- `canceled` - User canceled or didn't renew
 
 ### API Endpoints
 ```
