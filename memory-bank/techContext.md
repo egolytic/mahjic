@@ -91,18 +91,46 @@ Capped at ±5
 
 ## Stripe Integration
 
-### Identity Verification Flow
-1. Player clicks "Upgrade to Verified"
-2. API creates Stripe Identity session
-3. Player scans ID + selfie
-4. Webhook receives `identity.verification_session.verified`
-5. Player updated to `tier: 'verified'`
+### Subscription + Identity Verification Flow
+1. Player clicks "Get Verified" ($20/year)
+2. API creates Stripe Checkout session (subscription mode)
+3. Player completes payment → subscription created
+4. Player returns, clicks "Start Identity Verification"
+5. API creates Stripe Identity session
+6. Player scans ID + selfie
+7. Webhook receives `identity.verification_session.verified`
+8. Player updated to `tier: 'verified'`
+9. Subscription auto-renews yearly
+
+### Stripe Products (Live Mode)
+```
+Product ID: prod_TuYdoDL4rmjuL2
+Price ID: price_1SwjWPCy5VSUqVRV7aLaOeEh
+Lookup Key: mahjic_verified_yearly
+Amount: $20/year
+```
 
 ### Webhook Events Handled
+**Identity:**
 - `identity.verification_session.verified`
 - `identity.verification_session.requires_input`
 - `identity.verification_session.canceled`
+
+**Subscriptions:**
 - `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.paid` (renewals)
+- `invoice.payment_failed`
+
+### Subscription Status Values
+| Status | Meaning |
+|--------|---------|
+| `none` | No subscription |
+| `active` | Paid and current |
+| `past_due` | Payment failed, grace period |
+| `canceled` | User canceled or lapsed |
 
 ## Verified Sources
 

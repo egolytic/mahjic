@@ -2,18 +2,42 @@
 
 ## Current State
 
-**Phase:** MVP Complete, Verification Subscription Live, UX Improved
+**Phase:** MVP Complete, Yearly Subscription Model Live
 
-The Mahjic rating system is fully built and deployed with payment-first verification flow.
+The Mahjic rating system is fully built with Stripe Identity + yearly subscription verification.
 
-## What Was Just Done (Feb 2, 2026)
+## What Was Just Done (Feb 3, 2026)
+
+### Stripe Identity Enabled for Live Mode
+1. **Root cause found** - Identity wasn't activated for live mode (only test mode worked)
+2. **Fixed** - Enabled Stripe Identity via dashboard application
+3. **Features enabled** - Document verification, synthetic identity protection, mobile SDK
+
+### Converted to Yearly Subscription Model
+1. **Stripe Product created** - `prod_TuYdoDL4rmjuL2` (Mahjic Verified Player)
+2. **Stripe Price created** - `price_1SwjWPCy5VSUqVRV7aLaOeEh` ($20/year, lookup key: `mahjic_verified_yearly`)
+3. **Checkout mode changed** - From `payment` (one-time) to `subscription` (recurring)
+4. **Webhook events added**:
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.paid` (yearly renewals)
+   - `invoice.payment_failed`
+5. **Database migration** - Added `stripe_subscription_id`, `subscription_status` columns
+6. **Billing portal** - Added `createBillingPortalSession()` for subscription management
+
+### Code Changes
+- `src/lib/stripe.ts` - Subscription checkout, billing portal
+- `src/app/api/webhooks/stripe/route.ts` - Subscription lifecycle handlers
+- `supabase/migrations/20260203000001_add_subscription_columns.sql`
+
+## What Was Done (Feb 2, 2026)
 
 ### Stripe Switched to Live Mode
 1. **Secret key updated** - Now using `sk_live_...` instead of `sk_test_...`
 2. **Vercel env var updated** - STRIPE_SECRET_KEY changed via CLI with `printf` (no trailing newlines)
-3. **Removed STRIPE_PUBLISHABLE_KEY** - Not needed server-side
-4. **Webhook secret** - Needs to be created in Stripe dashboard for live mode webhook at `https://mahjic.org/api/webhooks/stripe`
-5. **Real charges now active** - $20 verification payments will process real money
+3. **Webhook created** - Live mode webhook at `https://mahjic.org/api/webhooks/stripe`
+4. **Real charges now active** - $20/year verification subscriptions process real money
 
 ### Verification UX Improvements
 1. **Homepage CTAs** - Added prominent "Get Verified - $20/year" buttons:

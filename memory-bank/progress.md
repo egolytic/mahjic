@@ -107,6 +107,27 @@
 - [x] Created live webhook via Stripe CLI for `https://mahjic.org/api/webhooks/stripe`
 - [x] Added live STRIPE_WEBHOOK_SECRET to Vercel production
 
+### Stripe Identity + Yearly Subscriptions (Feb 3, 2026) ✅
+
+- [x] Debugged identity verification failure (root cause: Identity not enabled for live mode)
+- [x] Enabled Stripe Identity for live mode via dashboard application
+- [x] Enabled synthetic identity protection
+- [x] Enabled mobile SDK for React Native
+- [x] Created Stripe Product: `prod_TuYdoDL4rmjuL2` (Mahjic Verified Player)
+- [x] Created Stripe Price: `price_1SwjWPCy5VSUqVRV7aLaOeEh` ($20/year)
+- [x] Changed checkout from one-time payment to yearly subscription
+- [x] Added subscription webhook handlers:
+  - `customer.subscription.created`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - `invoice.paid` (renewals)
+  - `invoice.payment_failed`
+- [x] Added database columns: `stripe_subscription_id`, `subscription_status`
+- [x] Added billing portal session creation for subscription management
+- [x] Deployed to production
+- [x] Updated CLAUDE.md in Mahjic and Bam Good Time
+- [x] Updated ~/CLAUDE.md with Stripe Identity mobile SDK info for Mahjic App
+
 ## In Progress
 
 ### BAM Good Time Integration
