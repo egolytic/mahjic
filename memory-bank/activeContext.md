@@ -2,11 +2,32 @@
 
 ## Current State
 
-**Phase:** MVP Complete, UUID Identity Linking Deployed
+**Phase:** Unified Supabase Migration Complete
 
-The Mahjic rating system is fully built with Stripe Identity + yearly subscription verification. UUID-based identity linking with BGT is now live.
+All three Mahjic ecosystem projects (BGT, Mahjic.org, Mahjic App) now share a single Supabase instance. The rating system, identity, and game results are unified.
 
 ## What Was Just Done (Feb 3, 2026)
+
+### Unified Supabase Migration (MAJOR ARCHITECTURE)
+
+**All three projects now share BGT's Supabase (`yeyhwsrlnvbvzrwqbqku.supabase.co`).**
+
+**What changed:**
+- `game_sessions` table → `events` table (uses external org for API submissions)
+- Sessions API creates events with `org_id = '00000000-0000-0000-0000-000000000001'`
+- Same `players`, `rounds`, `round_players`, `rating_history` tables across all projects
+- Same auth system as BGT and Mahjic App
+
+**Key tables:**
+- `players` - Global player profiles with `mahjic_rating`, `verified_rating`
+- `verified_sources` - Approved clubs/platforms for game submissions
+- `rounds`, `round_players` - Game results per round
+- `rating_history` - Historical rating changes
+- `events` - Shared events table (BGT + Mahjic API)
+
+**Commit:** `2eb0ecc feat: switch to shared BGT Supabase for unified identity`
+
+---
 
 ### UUID-Based Identity Linking (MAJOR FEATURE)
 

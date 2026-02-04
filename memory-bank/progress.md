@@ -107,6 +107,15 @@
 - [x] Created live webhook via Stripe CLI for `https://mahjic.org/api/webhooks/stripe`
 - [x] Added live STRIPE_WEBHOOK_SECRET to Vercel production
 
+### Unified Supabase Migration (Feb 3, 2026) ✅
+
+- [x] Switched from standalone Supabase to shared BGT Supabase
+- [x] Updated sessions API to write to `events` table instead of `game_sessions`
+- [x] Created external org `00000000-0000-0000-0000-000000000001` for API submissions
+- [x] Same `players`, `rounds`, `round_players`, `rating_history` tables across all projects
+- [x] Backup of original config saved as `.env.backup.mahjic-supabase`
+- [x] Commit: `2eb0ecc feat: switch to shared BGT Supabase for unified identity`
+
 ### Stripe Identity + Yearly Subscriptions (Feb 3, 2026) ✅
 
 - [x] Debugged identity verification failure (root cause: Identity not enabled for live mode)

@@ -6,27 +6,44 @@
 |-------|------------|--------|
 | Frontend | Next.js 16 (App Router) | ✅ Deployed |
 | Styling | Tailwind CSS 4 | ✅ |
-| Database | Supabase (PostgreSQL) | ✅ 8 tables |
+| Database | Shared BGT Supabase (`yeyhwsrlnvbvzrwqbqku`) | ✅ Unified |
 | Auth | Supabase Auth (magic links) | ✅ |
 | Hosting | Vercel | ✅ mahjic.org |
 | Identity | Stripe Identity | ✅ Webhook configured |
 | Fonts | Playfair Display + Lato | ✅ |
 
+## Unified Supabase Architecture (Feb 3, 2026)
+
+Mahjic.org now shares BGT's Supabase instance with all three ecosystem projects.
+
+```
+Mahjic App (Mobile)     BGT (Web)           Mahjic.org (Ratings)
+      │                    │                      │
+      └────────┬───────────┴──────────────────────┘
+               │
+               ▼
+         BGT Supabase (yeyhwsrlnvbvzrwqbqku)
+```
+
+**External org for API submissions:** `00000000-0000-0000-0000-000000000001`
+
 ## Database Schema
 
-### Tables
+### Tables (Shared with BGT)
 
 | Table | Purpose |
 |-------|---------|
-| `players` | Player accounts, ratings, tier |
+| `players` | Global player profiles with `mahjic_rating`, `verified_rating` |
 | `verified_sources` | Clubs/platforms that submit games |
-| `game_sessions` | Container for a day's games |
+| `events` | Game events (BGT club events + Mahjic API submissions) |
 | `rounds` | Same 4 people playing X games |
 | `round_players` | Individual results per round |
 | `rating_history` | Rating changes over time |
 | `claim_tokens` | Profile claiming for provisional players |
 | `source_applications` | Pending source applications |
 | `verification_sessions` | Stripe Identity tracking |
+
+**Note:** `game_sessions` table deprecated - now uses `events` table with external org.
 
 ### Key Columns
 

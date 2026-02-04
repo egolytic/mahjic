@@ -206,24 +206,41 @@ NEXT_PUBLIC_APP_URL=https://mahjic.org
 
 ---
 
-## Shared Supabase (Feb 2026)
+## Unified Supabase Architecture (Feb 3, 2026) ✅
 
-**Architecture:** Mahjic.org now shares BGT's Supabase (`yeyhwsrlnvbvzrwqbqku.supabase.co`).
+**Architecture:** All three Mahjic ecosystem projects share BGT's Supabase (`yeyhwsrlnvbvzrwqbqku.supabase.co`).
+
+```
+BGT (Web)                Mahjic App (Mobile)          Mahjic.org (Ratings)
+    │                          │                           │
+    └──────────┬───────────────┘                           │
+               │                                           │
+               ▼                                           │
+         BGT Supabase ◄────────────────────────────────────┘
+     (yeyhwsrlnvbvzrwqbqku)                    (API submissions)
+```
 
 **Backup:** Original Supabase config saved as `.env.backup.mahjic-supabase`
 
 **What changed:**
-- `game_sessions` table → `events` table (BGT's)
+- `game_sessions` table → `events` table (with external org for API submissions)
+- Sessions API writes to `events` with `org_id = '00000000-0000-0000-0000-000000000001'` (external org)
 - Same `players`, `rounds`, `round_players`, `rating_history` tables
 - Same auth system as BGT and Mahjic App
-- Player profiles are in the `players` table with `mahjic_rating` and `verified_rating`
 
 **Key tables:**
-- `players` - Global player profiles with ratings, verification status
+- `players` - Global player profiles with `mahjic_rating`, `verified_rating`, verification status
 - `verified_sources` - Approved clubs/platforms that can submit game results
 - `rounds` - Game rounds within events
 - `round_players` - Per-player per-round results with rating tracking
 - `rating_history` - Historical rating changes for audit trail
+- `events` - Shared events table (BGT club events + Mahjic API submissions)
+
+**External Org for API Submissions:**
+```typescript
+const EXTERNAL_ORG_ID = '00000000-0000-0000-0000-000000000001';
+// Use this when submitting games via Mahjic API (no club association)
+```
 
 ---
 
