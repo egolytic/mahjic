@@ -102,9 +102,9 @@ This handles variable game counts (some tables play 4 games, others play 8).
 ### Expected Score Formula
 Standard ELO expected score:
 ```
-E = 1 / (1 + 10^((Ra - Rb) / 400))
+E = 1 / (1 + 10^((Rb - Ra) / 400))
 ```
-Where Ra is your rating and Rb is opponent's rating.
+Where Ra is your rating and Rb is opponent's rating. Higher-rated player has E > 0.5.
 
 ### Points Bonus (League/Tournament Events ONLY)
 
