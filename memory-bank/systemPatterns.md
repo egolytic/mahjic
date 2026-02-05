@@ -75,7 +75,17 @@ Leaderboard only shows Verified Rating, which only includes games against ID-ver
 
 ---
 
-## ELO CALCULATION PATTERNS (from BAM Good Time)
+## ELO CALCULATION PATTERNS
+
+**Mahjic.org owns all rating calculations.** BGT and Mahjic App submit scores; this system calculates ratings.
+
+### K-Factor by Experience
+
+| Games Played | K-Factor | Effect |
+|--------------|----------|--------|
+| < 30 games | K = 32 | New players, ratings change quickly |
+| 30-100 games | K = 24 | Intermediate |
+| > 100 games | K = 16 | Experienced, ratings stabilize |
 
 ### Pairwise Comparison
 Each player compared against each tablemate (not just positions):
@@ -89,11 +99,34 @@ Win rate = mahjongs / games_played
 ```
 This handles variable game counts (some tables play 4 games, others play 8).
 
-### K-Factor Based on Experience
-New players' ratings move faster, experienced players are more stable.
+### Expected Score Formula
+Standard ELO expected score:
+```
+E = 1 / (1 + 10^((Ra - Rb) / 400))
+```
+Where Ra is your rating and Rb is opponent's rating.
 
-### Points Bonus is Secondary
-Points bonus (±5 cap) is added ON TOP of win-rate ELO, not replacing it.
+### Points Bonus (League/Tournament Events ONLY)
+
+For league and tournament events, points add a bonus layer:
+
+```
+point_differential = your_points - opponent_points
+bonus = clamp(point_differential / 50, -5, +5)
+final_change = base_elo_change + bonus
+```
+
+**NOT applied to:** Open play, lessons, social events.
+
+**Example:**
+- Alice: 3 mahjongs, +60 points
+- Dan: 1 mahjong, -50 points
+- Base ELO (3 vs 1 mahjongs): +8
+- Point bonus: (60 - (-50)) / 50 = +2.2, capped → +2
+- Final: +10
+
+### Wall Games
+Tracked for statistics but do NOT affect rating calculation.
 
 ---
 
