@@ -70,6 +70,11 @@ export function Footer() {
                   GitHub
                 </a>
               </li>
+              <li>
+                <Link href="/privacy" className="text-cream/80 hover:text-coral transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
